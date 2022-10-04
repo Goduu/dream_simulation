@@ -10,7 +10,7 @@ class HexType(Enum):
     DOUBLE_GREEN = "double-green"
     BLUE = "blue"
     DOUBLE_BLUE = "double-blue"
-    RELOAD = "reload"
+    MATERIAL = "material"
     START = "start"
 
 

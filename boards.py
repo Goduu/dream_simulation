@@ -32,13 +32,13 @@ green_one = Hex(coordinates=HexCoordinates(1, -1, 0), type="green")
 green_two = Hex(coordinates=HexCoordinates(-1, 0, 1), type="double-green")
 green_three = Hex(coordinates=HexCoordinates(-1, 1, 0), type="green")
 
-load_one = Hex(coordinates=HexCoordinates(0, -1, 1), type="load")
-load_two = Hex(coordinates=HexCoordinates(0, 1, -1), type="load")
+material_one = Hex(coordinates=HexCoordinates(0, -1, 1), type="material")
+material_two = Hex(coordinates=HexCoordinates(0, 1, -1), type="material")
 
 hexs = [
     start_one, start_two, start_three, start_four, red_one, red_two, red_three,
     blue_one, blue_two, blue_three, blue_four, green_one, green_two,
-    green_three, load_one, load_two
+    green_three, material_one, material_two
 ]
 
 board = Board()

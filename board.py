@@ -32,7 +32,7 @@ class Board:
         vcoord = [
             2. * np.sin(np.radians(60)) * (c.q - c.s) / 3. for c in coord
         ]
-        fig, ax = plt.subplots(1,figsize=(8, 8))
+        fig, ax = plt.subplots(1, figsize=(8, 8))
         ax.set_aspect('equal')
 
         for x, y, c, l in zip(hcoord, vcoord, colors, labels):
@@ -63,7 +63,6 @@ class Board:
                 row_data.append([score])
             cell_text.append(row_data)
 
-        print(cell_text)
         the_table = plt.table(cellText=cell_text,
                               rowLabels=rows,
                               colLabels=columns,
@@ -159,8 +158,8 @@ class Board:
             play_log("push", from_player, target_hexagon, next_hexagon,
                      target_player)
             simple_move(target_hexagon, next_hexagon)
-            target_player.occupied_hexagons.remove(target_hexagon)
-            target_player.occupied_hexagons.append(next_hexagon)
+            # target_player.occupied_hexagons.remove(target_hexagon)
+            # target_player.occupied_hexagons.append(next_hexagon)
             target_player.score.sub_score(target_hexagon)
             target_player.score.add_score(next_hexagon)
             # if pushed target is startpoint gives pushed player 1 cube
@@ -168,16 +167,14 @@ class Board:
                 target_player.cubes += 1
 
         play_log("move", from_player, from_hexagon, target_hexagon)
-        print('from_hexagon', start_hexagon)
         simple_move(start_hexagon, target_hexagon)
         from_player.score.add_score(target_hexagon)
 
         from_player.cubes -= 1
-        from_player.occupied_hexagons.append(target_hexagon)
+        # from_player.occupied_hexagons.append(target_hexagon)
 
-        # if start point occupation == 0 remove it form hexagons occupation
-        if (from_hexagon.type == "start"
-                and len(from_hexagon.player_occupation) == 0):
-            from_player.occupied_hexagons.remove(from_hexagon)
-
-        return
+        # # if start point occupation == 0 remove it form hexagons occupation
+        # if ((from_hexagon.type == "start"
+        #         and len(from_hexagon.player_occupation) == 0)):
+        #     from_player.occupied_hexagons.remove(from_hexagon)
+        

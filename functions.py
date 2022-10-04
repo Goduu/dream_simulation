@@ -10,6 +10,10 @@ def get_next_tile_coords_after_push(coord: HexCoordinates,
 
 def simple_move(from_hexagon: Hex, target_hexagon: Hex):
     target_hexagon.player_occupation.append(from_hexagon.player_occupation[0])
+    from_player: Player = from_hexagon.player_occupation[0]
+    from_player.occupied_hexagons.append(target_hexagon)
+    if (len(from_hexagon.player_occupation) == 1):
+        from_player.occupied_hexagons.remove(from_hexagon)
     from_hexagon.player_occupation.pop()
 
 
@@ -21,7 +25,7 @@ def get_hex_color(hex: Hex):
     type = hex.type
     if type == "start":
         return ["black"]
-    elif type == "load":
+    elif type == "material":
         return ["yellow"]
     elif type == "double-green":
         return ["lime"]
