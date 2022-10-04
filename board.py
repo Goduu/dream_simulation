@@ -26,13 +26,13 @@ class Board:
         colors = list(map(get_hex_color, self.hexs))
         labels = list(map(get_hex_player, self.hexs))
         # Horizontal cartesian coords
-        hcoord = [c.q for c in coord]
+        hcoord = [c.r for c in coord]
 
         # Vertical cartersian coords
         vcoord = [
-            2. * np.sin(np.radians(60)) * (c.s - c.r) / 3. for c in coord
+            2. * np.sin(np.radians(60)) * (c.q - c.s) / 3. for c in coord
         ]
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots(1,figsize=(8, 8))
         ax.set_aspect('equal')
 
         for x, y, c, l in zip(hcoord, vcoord, colors, labels):
@@ -46,12 +46,28 @@ class Board:
                                  edgecolor="white" if
                                  (color == "cyan" or color == "lime"
                                   or color == "coral") else 'k')
-                                  
+
             ax.add_patch(hex)
             # Also add a text label
             ax.text(x, y + 0.2, l[0], ha='center', va='top')
         plt.xlim([-4, 4])
         plt.ylim([-4, 4])
+        # Add a table at the bottom of the axes
+        columns = ('Red', 'Blue', 'Green', 'Material')
+        rows = []
+        cell_text = []
+        for player in self.players:
+            rows.append(player.name)
+            row_data = []
+            for score in player.score.get_score_list_rgb():
+                row_data.append([score])
+            cell_text.append(row_data)
+
+        print(cell_text)
+        the_table = plt.table(cellText=cell_text,
+                              rowLabels=rows,
+                              colLabels=columns,
+                              loc='right', bbox=[0.04, 0.005, 0.3, 0.2])
         plt.savefig(
             "./figs/" + str(interaction) + pname + ".png",
             dpi='figure',
@@ -71,8 +87,8 @@ class Board:
 
     def find_player_by_coordinates(self, coordinates: HexCoordinates):
         for player in self.players:
-            for player_coordinates in player.occupied_coordinates:
-                if (player_coordinates == coordinates):
+            for player_hexagons in player.occupied_hexagons:
+                if (player_hexagons.coordinates == coordinates):
                     return player
 
     def add_hex(self, new_hex: Hex):
@@ -80,7 +96,7 @@ class Board:
 
     def add_player(self, new_player: Player):
         self.players.append(new_player)
-        player_hexagon = self.find_hex_by_coordinates(new_player.start_point)
+        player_hexagon = new_player.start_point
         for i in range(new_player.cubes):
             player_hexagon.player_occupation.append(new_player)
 
@@ -114,24 +130,22 @@ class Board:
 
     def check_movement_possibilities(self, player: Player):
         mov_possibilities = []
-        for occupied_coord in player.occupied_coordinates:
-            hex = self.find_hex_by_coordinates(occupied_coord)
-            surrounding_coordinates = hex.get_surroundings()
+        for occupied_hexagon in player.occupied_hexagons:
+            surrounding_coordinates = occupied_hexagon.get_surroundings()
             for sur_coord in surrounding_coordinates:
-                if (self.is_movement_possible(hex.coordinates, sur_coord)):
+                if (self.is_movement_possible(occupied_hexagon.coordinates, sur_coord)):
 
                     mov_possibilities.append({
-                        "from_coord": occupied_coord,
+                        "from_coord": occupied_hexagon.coordinates,
                         "target_coord": sur_coord
                     })
 
         return mov_possibilities
 
-    #can just be move if movement is possible
+    # can just be move if movement is possible
     def mov_player(self, from_coord: HexCoordinates,
-                   target_coord: HexCoordinates, start_coord: HexCoordinates):
+                   target_coord: HexCoordinates, start_hexagon: Hex):
         from_player = self.find_player_by_coordinates(from_coord)
-        start_hexagon = self.find_hex_by_coordinates(start_coord)
         from_hexagon = self.find_hex_by_coordinates(from_coord)
         target_hexagon = self.find_hex_by_coordinates(target_coord)
         target_player = len(target_hexagon.player_occupation
@@ -145,21 +159,25 @@ class Board:
             play_log("push", from_player, target_hexagon, next_hexagon,
                      target_player)
             simple_move(target_hexagon, next_hexagon)
-            target_player.occupied_coordinates.remove(target_coord)
-            target_player.occupied_coordinates.append(next_hex_coords)
-            #if pushed target is startpoint gives pushed player 1 cube
+            target_player.occupied_hexagons.remove(target_hexagon)
+            target_player.occupied_hexagons.append(next_hexagon)
+            target_player.score.sub_score(target_hexagon)
+            target_player.score.add_score(next_hexagon)
+            # if pushed target is startpoint gives pushed player 1 cube
             if (next_hexagon.type == "start"):
                 target_player.cubes += 1
 
         play_log("move", from_player, from_hexagon, target_hexagon)
+        print('from_hexagon', start_hexagon)
         simple_move(start_hexagon, target_hexagon)
+        from_player.score.add_score(target_hexagon)
 
         from_player.cubes -= 1
-        from_player.occupied_coordinates.append(target_coord)
+        from_player.occupied_hexagons.append(target_hexagon)
 
-        #if start point occupation == 0 remove it form hexagons occupation
+        # if start point occupation == 0 remove it form hexagons occupation
         if (from_hexagon.type == "start"
                 and len(from_hexagon.player_occupation) == 0):
-            from_player.occupied_coordinates.remove(from_hexagon.coordinates)
+            from_player.occupied_hexagons.remove(from_hexagon)
 
         return

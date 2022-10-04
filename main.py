@@ -17,7 +17,7 @@ if __name__ == '__main__':
             if (len(p1_possibilities) > 0):
                 chosen_coord = random.sample(p1_possibilities, 1)[0]
                 board.mov_player(from_coord=chosen_coord["from_coord"],
-                                 target_coord=chosen_coord["target_coord"], start_coord=p1.start_point)
+                                 target_coord=chosen_coord["target_coord"], start_hexagon=p1.start_point)
                 board.plot_board(interaction, p1.name)
             else:
                 p1.cubes = 0
@@ -26,7 +26,7 @@ if __name__ == '__main__':
             if (len(p2_possibilities) > 0):
                 chosen_coord = random.sample(p2_possibilities, 1)[0]
                 board.mov_player(from_coord=chosen_coord["from_coord"],
-                                 target_coord=chosen_coord["target_coord"], start_coord=p2.start_point)
+                                 target_coord=chosen_coord["target_coord"], start_hexagon=p2.start_point)
                 board.plot_board(interaction, p2.name)
             else:
                 p2.cubes = 0
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             if (len(p3_possibilities) > 0):
                 chosen_coord = random.sample(p3_possibilities, 1)[0]
                 board.mov_player(from_coord=chosen_coord["from_coord"],
-                                 target_coord=chosen_coord["target_coord"], start_coord=p3.start_point)
+                                 target_coord=chosen_coord["target_coord"], start_hexagon=p3.start_point)
                 board.plot_board(interaction, p3.name)
             else:
                 p3.cubes = 0
@@ -44,7 +44,7 @@ if __name__ == '__main__':
             if (len(p4_possibilities) > 0):
                 chosen_coord = random.sample(p4_possibilities, 1)[0]
                 board.mov_player(from_coord=chosen_coord["from_coord"],
-                                 target_coord=chosen_coord["target_coord"], start_coord=p4.start_point)
+                                 target_coord=chosen_coord["target_coord"], start_hexagon=p4.start_point)
                 board.plot_board(interaction, p4.name)
             else:
                 p4.cubes = 0

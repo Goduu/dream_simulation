@@ -46,10 +46,10 @@ board = Board()
 for h in hexs:
     board.add_hex(h)
 
-p1 = Player("p1", start_point=p1_start_coord, cubes=3, material=4)
-p2 = Player("p2", start_point=p2_start_coord, cubes=3, material=4)
-p3 = Player("p3", start_point=p3_start_coord, cubes=3, material=4)
-p4 = Player("p4", start_point=p4_start_coord, cubes=3, material=4)
+p1 = Player("p1", start_point=start_one, cubes=3)
+p2 = Player("p2", start_point=start_two, cubes=3)
+p3 = Player("p3", start_point=start_three, cubes=3)
+p4 = Player("p4", start_point=start_four, cubes=3)
 
 players = [p1, p2, p3, p4]
 
