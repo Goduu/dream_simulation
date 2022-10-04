@@ -1,9 +1,12 @@
-from boards import board
+import copy
+from boards_data import board
 import random
-from functions import play_log
+from movement_functions import check_movement_possibilities, mov_player, mov_player_with_skill
+import numpy as np
+from player import PlayerSkillType
 
 if __name__ == '__main__':
-
+    scores = {}
     p1 = board.players[0]
     p2 = board.players[1]
     p3 = board.players[2]
@@ -11,24 +14,65 @@ if __name__ == '__main__':
 
     players = [p1, p2, p3, p4]
 
-    should_print = False
+    for player in players:
+        scores[player.name] = []
 
-    interaction = 1
-    while p1.cubes > 0 or p2.cubes > 0 or p3.cubes > 0 or p4.cubes > 0:
-        print("[ROUND " + str(interaction) + "]")
-        for player in players: 
-            if(player.cubes >0):
-                player_possibilities = board.check_movement_possibilities(player)
-                if (len(player_possibilities) > 0):
-                    chosen_coord = random.sample(player_possibilities, 1)[0]
-                    board.mov_player(from_coord=chosen_coord["from_coord"],
-                                    target_coord=chosen_coord["target_coord"], start_hexagon=player.start_point)
-                    if should_print == True: board.plot_board(interaction, player.name) 
-                else:
-                    player.cubes = 0    
-        interaction += 1
-    board.plot_board(10000, player.name)
+    for rounds in range(1000):
+        round_board = copy.deepcopy(board)
+        p1 = round_board.players[0]
+        p2 = round_board.players[1]
+        p3 = round_board.players[2]
+        p4 = round_board.players[3]
+
+        players = [p1, p2, p3, p4]
+
+        should_print = False
+
+        for round in range(3):
+            turn = 1
+            while p1.cubes > 0 or p2.cubes > 0 or p3.cubes > 0 or p4.cubes > 0:
+                if should_print:
+                    print("[ROUND " + str(round) + "]")
+                for player in players:
+                    if (player.cubes > 0):
+                        player_possibilities = check_movement_possibilities(
+                            round_board,
+                            player)
+                        without_skills_possibilities = list(filter(lambda possibility: len(
+                            possibility["with_skill"]) == 0, player_possibilities))
+                        if (len(without_skills_possibilities) > 0):
+                            chosen_coord = random.sample(
+                                without_skills_possibilities, 1)[0]
+                            mov_player(round_board, from_coord=chosen_coord["from_coord"],
+                                       target_coord=chosen_coord["target_coord"], start_hexagon=player.start_point)
+                            if should_print == True:
+                                round_board.plot_board(turn, player.name)
+                        elif (len(player_possibilities) > 0):
+                            random_int = random.randint(1, 10)
+                            if (random_int < 11):
+                                with_skills_possibilities = list(filter(lambda possibility: len(
+                                    possibility["with_skill"]) > 0, player_possibilities))
+                                chosen_skill_move = random.sample(
+                                    with_skills_possibilities, 1)[0]
+                                chosen_skill = random.sample(
+                                    chosen_skill_move["with_skill"], 1)[0]
+                                mov_player_with_skill(round_board, from_coord=chosen_skill_move["from_coord"],
+                                                      target_coord=chosen_skill_move["target_coord"], start_hexagon=player.start_point, skill=chosen_skill)
+                        else:
+                            player.cubes = 0
+                if (turn > 30):
+                    round_board.plot_board(10000, player.name)
+                turn += 1
+
+            for player in players:
+                player_score = player.get_round_score()
+                if should_print:
+                    print("[SCORE] ", player.name,
+                          " round score: ", player_score)
+
+            round_board.new_round()
+        for player in players:
+            scores[player.name].append(player.score.accumulator)
 
     for player in players:
-        print("[SCORE] ", player.name, " final score: ", player.get_round_score())
-
+        print(player.name, np.mean(scores[player.name]))

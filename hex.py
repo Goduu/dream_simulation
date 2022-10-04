@@ -24,9 +24,6 @@ class Hex:
     def __repr__(self):
         return f"<Hex \n type:{self.type}  \n player_occupation:{self.player_occupation} \n coordinates:{self.coordinates} >"
 
-    def change_player(self, player):
-        self.player = player
-
     def get_surroundings(self) -> List[HexCoordinates]:
         q = self.coordinates.q
         r = self.coordinates.r

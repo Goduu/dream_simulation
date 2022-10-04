@@ -2,19 +2,12 @@ from hex import Hex
 from hex_coordinates import HexCoordinates
 from player import Player
 
+should_print = False
+
 
 def get_next_tile_coords_after_push(coord: HexCoordinates,
                                     coord_target: HexCoordinates):
     return coord_target + (coord_target - coord)
-
-
-def simple_move(from_hexagon: Hex, target_hexagon: Hex):
-    target_hexagon.player_occupation.append(from_hexagon.player_occupation[0])
-    from_player: Player = from_hexagon.player_occupation[0]
-    from_player.occupied_hexagons.append(target_hexagon)
-    if (len(from_hexagon.player_occupation) == 1):
-        from_player.occupied_hexagons.remove(from_hexagon)
-    from_hexagon.player_occupation.pop()
 
 
 def get_hex_coord(hex: Hex):
@@ -50,6 +43,8 @@ def play_log(type,
              from_hex: Hex,
              target_hex: Hex,
              target_player: Player = {}):
+    if(should_print == False):
+        return
     if (type == "move"):
         print("[MOVE] - ", player.name, " from ", from_hex.type,
               from_hex.coordinates.q, from_hex.coordinates.r,

@@ -1,5 +1,5 @@
 from typing import List
-from functions import get_hex_color, get_hex_coord, get_hex_player, get_next_tile_coords_after_push, play_log, simple_move
+from functions import get_hex_color, get_hex_coord, get_hex_player
 from hex import Hex
 from hex_coordinates import HexCoordinates
 from player import Player
@@ -59,7 +59,7 @@ class Board:
         for player in self.players:
             rows.append(player.name)
             row_data = []
-            for score in player.score.get_score_list_rgb():
+            for score in player.partialScore.get_score_list_rgb():
                 row_data.append([score])
             cell_text.append(row_data)
 
@@ -105,76 +105,18 @@ class Board:
                 return True
         return False
 
-    def can_push(self, coord: HexCoordinates, coord_target: HexCoordinates):
-        coord_to_move_pushed_player = get_next_tile_coords_after_push(
-            coord, coord_target)
-        hex_to_move_pushed_player = self.find_hex_by_coordinates(
-            coord_to_move_pushed_player)
 
-        if (hex_to_move_pushed_player
-                and hex_to_move_pushed_player.player_occupation == []):
-            return True
-        return False
+    # def check_movement_skill_reset(self, player: Player):
 
-    def is_movement_possible(self, coord: HexCoordinates,
-                             coord_target: HexCoordinates):
-        if self.hex_exists(coord_target):
-            hexagon_target = self.find_hex_by_coordinates(coord_target)
-            if hexagon_target.type == "start":
-                return False
-            elif len(hexagon_target.player_occupation) == 0:
-                return True
-            elif self.can_push(coord, coord_target):
-                return True
 
-    def check_movement_possibilities(self, player: Player):
-        mov_possibilities = []
-        for occupied_hexagon in player.occupied_hexagons:
-            surrounding_coordinates = occupied_hexagon.get_surroundings()
-            for sur_coord in surrounding_coordinates:
-                if (self.is_movement_possible(occupied_hexagon.coordinates, sur_coord)):
+    def new_round(self):
+        for hex in self.hexs:
+            hex.player_occupation = []
+        for player in self.players:
+            player.cubes = 3
+            player.occupied_hexagons=[player.start_point]
+            for i in range(player.cubes):
+                player.start_point.player_occupation.append(player)
 
-                    mov_possibilities.append({
-                        "from_coord": occupied_hexagon.coordinates,
-                        "target_coord": sur_coord
-                    })
-
-        return mov_possibilities
-
-    # can just be move if movement is possible
-    def mov_player(self, from_coord: HexCoordinates,
-                   target_coord: HexCoordinates, start_hexagon: Hex):
-        from_player = self.find_player_by_coordinates(from_coord)
-        from_hexagon = self.find_hex_by_coordinates(from_coord)
-        target_hexagon = self.find_hex_by_coordinates(target_coord)
-        target_player = len(target_hexagon.player_occupation
-                            ) > 0 and target_hexagon.player_occupation[0]
-
-        # push movement
-        if (target_player and isinstance(target_player, Player)):
-            next_hex_coords = get_next_tile_coords_after_push(
-                from_coord, target_coord)
-            next_hexagon = self.find_hex_by_coordinates(next_hex_coords)
-            play_log("push", from_player, target_hexagon, next_hexagon,
-                     target_player)
-            simple_move(target_hexagon, next_hexagon)
-            # target_player.occupied_hexagons.remove(target_hexagon)
-            # target_player.occupied_hexagons.append(next_hexagon)
-            target_player.score.sub_score(target_hexagon)
-            target_player.score.add_score(next_hexagon)
-            # if pushed target is startpoint gives pushed player 1 cube
-            if (next_hexagon.type == "start"):
-                target_player.cubes += 1
-
-        play_log("move", from_player, from_hexagon, target_hexagon)
-        simple_move(start_hexagon, target_hexagon)
-        from_player.score.add_score(target_hexagon)
-
-        from_player.cubes -= 1
-        # from_player.occupied_hexagons.append(target_hexagon)
-
-        # # if start point occupation == 0 remove it form hexagons occupation
-        # if ((from_hexagon.type == "start"
-        #         and len(from_hexagon.player_occupation) == 0)):
-        #     from_player.occupied_hexagons.remove(from_hexagon)
+    
         

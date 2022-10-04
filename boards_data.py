@@ -1,17 +1,17 @@
 from hex import Hex
 from hex_coordinates import HexCoordinates
 from board import Board
-from player import Player
+from player import Player, PlayerSkill, PlayerSkillType
 
 # ---#S###S##
 # ---R#L#G#B#
 # ---#G#R#B#B
 # ---B#G#L#R#
 # ---#S###S##
-p1_start_coord = HexCoordinates(0, -2, 2)
+p4_start_coord = HexCoordinates(0, -2, 2)
 p2_start_coord = HexCoordinates(2, -2, 0)
 p3_start_coord = HexCoordinates(-2, 2, 0)
-p4_start_coord = HexCoordinates(0, 2, -2)
+p1_start_coord = HexCoordinates(0, 2, -2)
 
 start_one = Hex(coordinates=p1_start_coord, type="start")
 start_two = Hex(coordinates=p2_start_coord, type="start")
@@ -25,7 +25,7 @@ red_three = Hex(coordinates=HexCoordinates(1, 1, -2), type="red")
 blue_one = Hex(coordinates=HexCoordinates(2, -1, -1), type="blue")
 blue_two = Hex(coordinates=HexCoordinates(1, 0, -1), type="double-blue")
 blue_three = Hex(coordinates=HexCoordinates(-2, 1, 1), type="blue")
-## should be other color
+# should be other color
 blue_four = Hex(coordinates=HexCoordinates(2, 0, -2), type="blue")
 
 green_one = Hex(coordinates=HexCoordinates(1, -1, 0), type="green")
@@ -46,10 +46,12 @@ board = Board()
 for h in hexs:
     board.add_hex(h)
 
-p1 = Player("p1", start_point=start_one, cubes=3)
-p2 = Player("p2", start_point=start_two, cubes=3)
-p3 = Player("p3", start_point=start_three, cubes=3)
-p4 = Player("p4", start_point=start_four, cubes=3)
+p1Skill = [PlayerSkill(PlayerSkillType.RESET, 3)]
+
+p1 = Player("p1", start_point=start_one, cubes=3, skills=p1Skill)
+p2 = Player("p2", start_point=start_two, cubes=3, skills=[])
+p3 = Player("p3", start_point=start_three, cubes=3, skills=[])
+p4 = Player("p4", start_point=start_four, cubes=3, skills=[])
 
 players = [p1, p2, p3, p4]
 
