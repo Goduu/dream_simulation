@@ -34,34 +34,33 @@ if __name__ == '__main__':
                 if should_print:
                     print("[ROUND " + str(round) + "]")
                 for player in players:
+
                     if (player.cubes > 0):
                         player_possibilities = check_movement_possibilities(
                             round_board,
                             player)
-                        without_skills_possibilities = list(filter(lambda possibility: len(
-                            possibility["with_skill"]) == 0, player_possibilities))
-                        if (len(without_skills_possibilities) > 0):
+
+                        if (len(player_possibilities) > 0):
                             chosen_coord = random.sample(
-                                without_skills_possibilities, 1)[0]
-                            mov_player(round_board, from_coord=chosen_coord["from_coord"],
-                                       target_coord=chosen_coord["target_coord"], start_hexagon=player.start_point)
+                                player_possibilities, 1)[0]
+                            if (len(chosen_coord["with_skill"]) > 0):
+                                chosen_skill = random.sample(
+                                    chosen_coord["with_skill"], 1)[0]
+                                mov_player_with_skill(round_board, from_coord=chosen_coord["from_coord"],
+                                                      target_coord=chosen_coord["target_coord"], start_hexagon=player.start_point, skill=chosen_skill)
+                            else:
+                                mov_player(round_board, from_coord=chosen_coord["from_coord"],
+                                           target_coord=chosen_coord["target_coord"], start_hexagon=player.start_point)
+
                             if should_print == True:
                                 round_board.plot_board(turn, player.name)
-                        elif (len(player_possibilities) > 0):
-                            random_int = random.randint(1, 10)
-                            if (random_int < 11):
-                                with_skills_possibilities = list(filter(lambda possibility: len(
-                                    possibility["with_skill"]) > 0, player_possibilities))
-                                chosen_skill_move = random.sample(
-                                    with_skills_possibilities, 1)[0]
-                                chosen_skill = random.sample(
-                                    chosen_skill_move["with_skill"], 1)[0]
-                                mov_player_with_skill(round_board, from_coord=chosen_skill_move["from_coord"],
-                                                      target_coord=chosen_skill_move["target_coord"], start_hexagon=player.start_point, skill=chosen_skill)
+
                         else:
                             player.cubes = 0
                 if (turn > 30):
                     round_board.plot_board(10000, player.name)
+                if(turn > 31):
+                    break
                 turn += 1
 
             for player in players:

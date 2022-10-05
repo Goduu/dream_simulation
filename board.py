@@ -105,18 +105,15 @@ class Board:
                 return True
         return False
 
-
     # def check_movement_skill_reset(self, player: Player):
-
 
     def new_round(self):
         for hex in self.hexs:
             hex.player_occupation = []
         for player in self.players:
             player.cubes = 3
-            player.occupied_hexagons=[player.start_point]
+            for skill in player.skills:
+                skill.charges += 1
+            player.occupied_hexagons = [player.start_point]
             for i in range(player.cubes):
                 player.start_point.player_occupation.append(player)
-
-    
-        

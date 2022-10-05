@@ -81,6 +81,7 @@ class PlayerSkillType(Enum):
     CHANGE_START = "change-start"   # Change start place
     RESET_MIDDLE = "reset-middle"   # Reset a cube in the middle of 2 of yours 
     DOUBLE_MOVE = "reset-middle"    # Move 2 Hexagons without pushing 
+    COEXIST = "coexist"             # You can move to another players hex without moving him  
 
 
 class PlayerSkill:

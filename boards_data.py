@@ -8,10 +8,10 @@ from player import Player, PlayerSkill, PlayerSkillType
 # ---#G#R#B#B
 # ---B#G#L#R#
 # ---#S###S##
-p4_start_coord = HexCoordinates(0, -2, 2)
+p1_start_coord = HexCoordinates(0, -2, 2)
 p2_start_coord = HexCoordinates(2, -2, 0)
 p3_start_coord = HexCoordinates(-2, 2, 0)
-p1_start_coord = HexCoordinates(0, 2, -2)
+p4_start_coord = HexCoordinates(0, 2, -2)
 
 start_one = Hex(coordinates=p1_start_coord, type="start")
 start_two = Hex(coordinates=p2_start_coord, type="start")
@@ -46,7 +46,7 @@ board = Board()
 for h in hexs:
     board.add_hex(h)
 
-p1Skill = [PlayerSkill(PlayerSkillType.RESET, 3)]
+p1Skill = [PlayerSkill(PlayerSkillType.RESET, 5)]
 
 p1 = Player("p1", start_point=start_one, cubes=3, skills=p1Skill)
 p2 = Player("p2", start_point=start_two, cubes=3, skills=[])
