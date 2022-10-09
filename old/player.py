@@ -69,7 +69,7 @@ class PlayerScore:
 
 
 class PlayerSkillType(Enum):
-    PUSH = "push"                   # Push two in a row and stay in the first hex
+    PUSH_ROW = "push"               # Push two in a row and stay in the first hex
     PUSH_BORDER = "push-border"     # Push in empty boarder
     RESET = "reset"                 # Reset an adjacent player
     JUMP = "jump"                   # Jump a player and move to the next hex

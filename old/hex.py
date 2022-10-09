@@ -34,3 +34,22 @@ class Hex:
                                s - 1), HexCoordinates(q - 1, r + 1, s),
                 HexCoordinates(q - 1, r,
                                s + 1), HexCoordinates(q, r - 1, s + 1))
+
+
+def get_hex_point(self, type: HexType):
+    if type == HexType.RED:
+        return 1 
+    if type == HexType.DOUBLE_RED:
+        return 2
+    if type == HexType.GREEN:
+        return 1 
+    if type == HexType.DOUBLE_GREEN:
+        return 2
+    if type == HexType.BLUE:
+        return 1
+    if type == HexType.DOUBLE_BLUE:
+        return 2
+    if type == HexType.MATERIAL:
+        return 0
+    if type == HexType.START:
+        return 0

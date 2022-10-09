@@ -21,7 +21,7 @@ class Board:
         for h in self.hexs:
             print(h)
 
-    def plot_board(self, interaction, pname):
+    def plot_board(self, round, interaction, pname):
         coord = list(map(get_hex_coord, self.hexs))
         colors = list(map(get_hex_color, self.hexs))
         labels = list(map(get_hex_player, self.hexs))
@@ -68,7 +68,8 @@ class Board:
                               colLabels=columns,
                               loc='right', bbox=[0.04, 0.005, 0.3, 0.2])
         plt.savefig(
-            "./figs/" + str(interaction) + pname + ".png",
+            "./figs/round"+str(round) + "turn" +
+            str(interaction) + "pname" + pname + ".png",
             dpi='figure',
             format=None,
             metadata=None,
@@ -77,7 +78,8 @@ class Board:
             facecolor='auto',
             edgecolor='auto',
         )
-        plt.show()
+        # plt.show()
+        plt.close()
 
     def find_hex_by_coordinates(self, coordinates: HexCoordinates):
         for h in self.hexs:
