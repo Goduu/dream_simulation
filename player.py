@@ -60,16 +60,16 @@ def get_hex_point(self, type: HexType):
         return 0
 
 class PlayerScore:
-    def __init__(self, material=4) -> None:
-        self.red = 0
-        self.blue = 0
-        self.green = 0
+    def __init__(self,red = 0,  green = 0, blue = 0, material=4) -> None:
+        self.red = red
+        self.blue = blue
+        self.green = green
         self.material = material
         self.accumulator = 0
         self.reward = 0
 
     def __repr__(self):
-        return f"<Player Score \n Acc:{self.accumulator}  \n Red:{self.red}  \n Green:{self.green}  \n Blue:{self.blue}  \n Material:{self.material}  \n  >"
+        return f"<Player Score \n Acc:{self.accumulator}  \n Red:{self.red}  \n Green:{self.green}  \n Blue:{self.blue}  \n Material:{self.material} \n Rewards:{self.reward}  \n  >"
 
     def add_score(self, targetHex: Hex, account_material=False):
         if (self.material > 0):
@@ -117,9 +117,6 @@ class PlayerScore:
         elif (targetHex.type == "double-green"):
             self.green -= 2
             self.accumulator -= 2
-
-    def get_reward(self):
-        self.reward =  self.red + self.blue + self.green
 
     def get_score_list_rgb(self):
         return (self.red, self.green, self.blue, self.material)
@@ -174,7 +171,6 @@ class Player:
         else:
             for hex in self.occupied_hexagons:
                 player_score.add_score(hex, account_material=True)
-        self.score.get_reward()
         return player_score
 
     def new_round(self):
@@ -198,11 +194,9 @@ class Player:
                 skill.charges -= 1
                 return
 
-    def check_termination(self, mov_possibilities):
-        if self.cubes == 0 or len(mov_possibilities) == 0:
-            self.terminated = True
-        else:
-            self.terminated = False
+    def check_termination(self, mov_possibilities, buy_possibilities):
+        
+        return (self.cubes == 0 or len(mov_possibilities) == 0) and len(buy_possibilities) == 0
 
         
 

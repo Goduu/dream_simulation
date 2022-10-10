@@ -39,6 +39,8 @@ def movement_possible(board: Board, player: Player, coord: HexCoordinates,
 
 def check_movement_possibilities(board: Board, player: Player):
     mov_possibilities: List[MovPossibility] = list()
+    if(player.cubes == 0):
+        return mov_possibilities
     for occupied_hexagon in player.occupied_hexagons:
         surrounding_coordinates = occupied_hexagon.get_surroundings()
         for sur_coord in surrounding_coordinates:
@@ -93,7 +95,7 @@ def mov_player(board: Board, from_hex: Hex,
             simple_move(from_hex, target_hex)
         else:
             simple_move(start_hex, target_hex)
-        from_player.partialScore.add_score(target_hex)
+        # from_player.partialScore.add_score(target_hex)
 
         from_player.cubes -= 1
 
@@ -120,17 +122,6 @@ def mov_player_with_skill(board: Board, from_hex: Hex,
 
     from_player.cubes -= 1
 
-
-# def simple_move(from_hexagon: Hex, target_hexagon: Hex):
-#     target_hexagon.player_occupation = from_hexagon.player_occupation
-#     from_player = from_hexagon.player_occupation
-#     if(from_player):
-#         print('form player')
-#         from_player.occupied_hexagons = [target_hexagon]
-
-#         if (from_hexagon.occupation_number == 1):
-#             from_player.occupied_hexagons.remove(from_hexagon)
-#         from_hexagon.occupation_number -= 1
 
 def simple_move(from_hexagon: Hex, target_hexagon: Hex):
     from_player: Player = from_hexagon.player_occupation

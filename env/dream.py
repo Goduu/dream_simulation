@@ -1,4 +1,6 @@
+from faulthandler import is_enabled
 import functools
+import string
 from typing import List
 
 import gym
@@ -180,7 +182,8 @@ class raw_env(AECEnv):
             facecolor='auto',
             edgecolor='auto',
         )
-        plt.show()
+        # plt.show()
+        plt.close()
 
     def observe(self, agent):
         """
@@ -190,8 +193,10 @@ class raw_env(AECEnv):
         """
         current_player = self.players[0]
         for p in self.players:
+            print('agent ------ observe', agent, p.name)
             if (agent == p.name):
                 current_player = p
+        
 
         mov_possibilities = check_movement_possibilities(
             self.board, current_player)
@@ -224,7 +229,6 @@ class raw_env(AECEnv):
         pass
 
     def update_truncation_termination(self):
-
         truncations = {
             agent: len(check_movement_possibilities(self.board, self.players[i])) == 0 for i, agent in enumerate(self.agents)
         }
@@ -269,7 +273,6 @@ class raw_env(AECEnv):
         - _cumulative_rewards
         - terminations
         - truncations
-        - dones
         - infos
         - agent_selection
         And must set up the environment so that render(), step(), and observe()
@@ -280,6 +283,70 @@ class raw_env(AECEnv):
         self.reset_round()
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
+
+    def get_player_by_agent_name(self, agent_name: str):
+        current_player = self.players[0]
+        for p in self.players:
+            if (agent_name == p.name):
+                current_player = p
+        return current_player
+
+    # original was dead step modified
+    def __was_dead_step(self, action: None, agent: str) -> None:
+
+        if action is not None:
+            raise ValueError(
+                "when an agent is dead, the only valid action is None")
+
+        self.agents.remove(agent)
+
+        # finds next dead agent or loads next live agent (Stored in _skip_agent_selection)
+        _deads_order = [
+            agent
+            for agent in self.agents
+            if (self.terminations[agent] or self.truncations[agent])
+        ]
+        if _deads_order:
+            if getattr(self, "_skip_agent_selection", None) is None:
+                self._skip_agent_selection = self.agent_selection
+            self.agent_selection = _deads_order[0]
+        else:
+            if getattr(self, "_skip_agent_selection", None) is not None:
+                assert self._skip_agent_selection is not None
+                self.agent_selection = self._skip_agent_selection
+            self._skip_agent_selection = None
+        self._clear_rewards()
+
+    def is_end_round(self, action):
+        end_round = True
+        for i in self.agents:
+            end_round = end_round and (
+                self.truncations[i] or self.terminations[i]) 
+        if end_round:
+            # rewards for all agents are placed in the .rewards dictionary
+            for agent in self.agents:
+                agent_player = [player for player in self.players].index(agent)
+                self.rewards[agent
+                             ] = self.players[agent_player].get_round_score()
+
+            self.num_moves += 1
+            # The truncations dictionary must be updated for all players.
+            self.truncations, self.terminations = self.update_truncation_termination()
+
+            # observe the current state
+            for agent_observed in self.agents:
+                self._was_dead_step(action, agent_observed)
+        return end_round
+
+    # if he was pushed to a start point
+    def revive_agent_check(self, agent):
+        # if he was pushed to a start point
+        for possible_agent in self.agents:
+            player_to_check = self.get_player_by_agent_name(possible_agent)
+            if (self.terminations[possible_agent] and player_to_check.cubes > 0):
+                print("revive ", player_to_check.name)
+                self.terminations[possible_agent] = False
+                self.agents.append(agent)
 
     def step(self, action):
         """
@@ -296,86 +363,57 @@ class raw_env(AECEnv):
 
         agent = self.agent_selection
 
-        current_player = self.players[0]
-        for p in self.players:
-            if (agent == p.name):
-                current_player = p
+        current_player = self.get_player_by_agent_name(agent)
         print('currentplayer name', current_player.name, agent)
-        # if he was pushed to a start point
-        if (self.terminations[agent]
-                and current_player.cubes > 0):
-            self.terminations[agent] = False
+
+        action is not None and self.revive_agent_check(agent)
+
         if (
             self.terminations[agent]
             or self.truncations[agent]
         ):
-            print('xongas 1')
-            # handles stepping an agent which is already dead
-            # accepts a None action for the one agent, and moves the agent_selection to
-            # the next dead agent,  or if there are no more dead agents, to the next live agent
-            self._was_dead_step(action)
-            return
+            print('terminou ou truncou', self.agents)
+            print('terminou ou truncou', agent)
+            print('terminou ou truncou acg', action)
 
+            self.__was_dead_step(None, agent)
+
+        
         # the agent which stepped last had its _cumulative_rewards accounted for
         # (because it was returned by last()), so the _cumulative_rewards for this
         # agent should start again at 0
-        self._cumulative_rewards[agent] = 0
+        # self._cumulative_rewards[agent] = 0
 
         # stores action of current agent
         self.state[agent] = action
 
         # collect reward if it is the last agent to act
-        end_game = True
-        for i in self.agents:
-            end_game = end_game and self.truncations[i] and self.terminations[i]
-        if end_game:
+        is_end_round = self.is_end_round(action)
+        print("========================================================", is_end_round)
+        if (not is_end_round):
 
-            # rewards for all agents are placed in the .rewards dictionary
-            for i in range(4):
-                self.rewards[self.agents[i]
-                             ] = self.players[i].get_round_score()
-
-            self.num_moves += 1
-            # The truncations dictionary must be updated for all players.
-
-            self.truncations, self.terminations = self.update_truncation_termination()
-            # self.truncations = {
-            #     agent: len(check_movement_possibilities(self.board, self.players[i])) == 0 for i, agent in enumerate(self.agents)
-            # }
-            # self.terminations = {
-            #     agent: self.players[i].cubes == 0 for i, agent in enumerate(self.agents)
-            # }
-
-            # observe the current state
-            for i in self.agents:
-                self.observations[i] = self.state[
-                    self.agents[1 - self.agent_name_mapping[i]]
-                ]
-        else:
-            # necessary so that observe() returns a reasonable observation at all times.
-            # self.state[self.agents[1 - self.agent_name_mapping[agent]]] = 7
-            # no rewards are allocated until both players give an action
             self._clear_rewards()
+
             target_hex, from_hex = self.chose_mov_action(
                 action, current_player)
             if (target_hex):
                 mov_player(self.board, from_hex,
                            target_hex, current_player.start_point)
                 # selects the next agent.
-                self.agent_selection = self._agent_selector.next()
-                # Adds .rewards to ._cumulative_rewards
-                self._accumulate_rewards()
-                self.truncations, self.terminations = self.update_truncation_termination()
+        self.agent_selection = self._agent_selector.next()
+        # Adds .rewards to ._cumulative_rewards
+        self._accumulate_rewards()
+        self.truncations, self.terminations = self.update_truncation_termination()
 
-                # self.truncations = {
-                #     agent: len(check_movement_possibilities(self.board, self.players[i])) == 0 for i, agent in enumerate(self.agents)
-                # }
-                # self.terminations = {
-                #     agent: self.players[i].cubes == 0 for i, agent in enumerate(self.agents)
-                # }
-
+        print("[ist_end_round]-------------------------------------------------------------------", is_end_round,self.round)
         if self.render_mode == "human":
             self.render()
+
+       
+        if is_end_round:
+            if self.rounds < self.round:
+                print("[RESETOU]-------------------------------------------------------------------", self.round)
+                self.reset_round()
 
     def chose_mov_action(self, action, player):
         mov_possibilities = check_movement_possibilities(
