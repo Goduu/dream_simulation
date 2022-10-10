@@ -1,7 +1,63 @@
 from enum import Enum
 from typing import List
-from hex import Hex
 
+from enum import Enum
+from typing import List
+from hex_coordinates import HexCoordinates
+
+
+class HexType(Enum):
+    RED = "red"
+    DOUBLE_RED = "double-red"
+    GREEN = "green"
+    DOUBLE_GREEN = "double-green"
+    BLUE = "blue"
+    DOUBLE_BLUE = "double-blue"
+    MATERIAL = "material"
+    START = "start"
+
+
+class Hex:
+
+    def __init__(self,id, coordinates: HexCoordinates, type: HexType) -> None:
+        self.id = id
+        self.coordinates = coordinates
+        self.type = type
+        self.player_occupation: Player = None
+        self.occupation_number = 0
+
+    def __repr__(self):
+        return f"<Hex \n type:{self.type}  \n player_occupation:{self.player_occupation and self.player_occupation.name } \n coordinates:{self.coordinates} >"
+
+    def get_surroundings(self) -> List[HexCoordinates]:
+        q = self.coordinates.q
+        r = self.coordinates.r
+        s = self.coordinates.s
+        return (HexCoordinates(q + 1, r - 1,
+                               s), HexCoordinates(q + 1, r, s - 1),
+                HexCoordinates(q, r + 1,
+                               s - 1), HexCoordinates(q - 1, r + 1, s),
+                HexCoordinates(q - 1, r,
+                               s + 1), HexCoordinates(q, r - 1, s + 1))
+
+
+def get_hex_point(self, type: HexType):
+    if type == HexType.RED:
+        return 1 
+    if type == HexType.DOUBLE_RED:
+        return 2
+    if type == HexType.GREEN:
+        return 1 
+    if type == HexType.DOUBLE_GREEN:
+        return 2
+    if type == HexType.BLUE:
+        return 1
+    if type == HexType.DOUBLE_BLUE:
+        return 2
+    if type == HexType.MATERIAL:
+        return 0
+    if type == HexType.START:
+        return 0
 
 class PlayerScore:
     def __init__(self, material=4) -> None:
@@ -10,6 +66,7 @@ class PlayerScore:
         self.green = 0
         self.material = material
         self.accumulator = 0
+        self.reward = 0
 
     def __repr__(self):
         return f"<Player Score \n Acc:{self.accumulator}  \n Red:{self.red}  \n Green:{self.green}  \n Blue:{self.blue}  \n Material:{self.material}  \n  >"
@@ -61,8 +118,8 @@ class PlayerScore:
             self.green -= 2
             self.accumulator -= 2
 
-    def calculate_final_score(self):
-        return self.red + self.blue + self.green
+    def get_reward(self):
+        self.reward =  self.red + self.blue + self.green
 
     def get_score_list_rgb(self):
         return (self.red, self.green, self.blue, self.material)
@@ -79,9 +136,9 @@ class PlayerSkillType(Enum):
     THROW_BEHIND = "throw-behind"   # Move someone adjacent, to a tile behind you
     RELOAD = "reload"               # Reload your white material
     CHANGE_START = "change-start"   # Change start place
-    RESET_MIDDLE = "reset-middle"   # Reset a cube in the middle of 2 of yours 
-    DOUBLE_MOVE = "reset-middle"    # Move 2 Hexagons without pushing 
-    COEXIST = "coexist"             # You can move to another players hex without moving him  
+    RESET_MIDDLE = "reset-middle"   # Reset a cube in the middle of 2 of yours
+    DOUBLE_MOVE = "reset-middle"    # Move 2 Hexagons without pushing
+    COEXIST = "coexist"             # You can move to another players hex without moving him
 
 
 class PlayerSkill:
@@ -90,17 +147,19 @@ class PlayerSkill:
         self.charges = charges
 
 
-
 class Player:
 
-    def __init__(self, name: str, start_point: Hex, cubes: int, skills: List[PlayerSkill]) -> None:
+    def __init__(self, id: int, name: str, start_point: Hex, cubes: int, skills: List[PlayerSkill]) -> None:
+        self.id = id
         self.name = name
+        self.terminated = False
         self.start_point = start_point
         self.occupied_hexagons: List[Hex] = [start_point]
         self.cubes = cubes
         self.partialScore = PlayerScore()
         self.score = PlayerScore()
         self.skills: List[PlayerSkill] = skills
+
 
     def __repr__(self):
         return f"<Player \n name:{self.name}  \n start_point:{self.start_point} \n occupied_coordinates:{self.occupied_hexagons}  \n cubes:{self.cubes}  >"
@@ -115,8 +174,16 @@ class Player:
         else:
             for hex in self.occupied_hexagons:
                 player_score.add_score(hex, account_material=True)
-
+        self.score.get_reward()
         return player_score
+
+    def new_round(self):
+        self.cubes = 3
+        for skill in self.skills:
+            skill.charges += 1
+        self.occupied_hexagons = [self.start_point]
+        self.start_point.player_occupation = self
+        self.start_point.occupation_number = self.cubes
 
     def check_skill(self, type: PlayerSkillType):
         for skill in self.skills:
@@ -127,6 +194,15 @@ class Player:
 
     def use_skill(self, type: PlayerSkillType):
         for skill in self.skills:
-            if(skill.type == type):
+            if (skill.type == type):
                 skill.charges -= 1
                 return
+
+    def check_termination(self, mov_possibilities):
+        if self.cubes == 0 or len(mov_possibilities) == 0:
+            self.terminated = True
+        else:
+            self.terminated = False
+
+        
+

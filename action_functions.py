@@ -1,5 +1,4 @@
-from hex import Hex
-from player import Player, PlayerSkillType
+from player import Player, PlayerSkillType, Hex
 
 
 def use_reset_skill(from_player: Player, target_player: Player, target_player_hex: Hex):

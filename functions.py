@@ -1,6 +1,5 @@
-from hex import Hex
 from hex_coordinates import HexCoordinates
-from player import Player
+from player import Player,Hex
 
 should_print = False
 
@@ -30,12 +29,9 @@ def get_hex_color(hex: Hex):
 
 
 def get_hex_player(hex: Hex):
-    if (len(hex.player_occupation) == 0):
+    if (hex.occupation_number == 0):
         return [""]
-    return [
-        hex.player_occupation[0].name + " " +
-        str(hex.player_occupation[0].cubes)
-    ]
+    return [ hex.player_occupation.name ]
 
 
 def play_log(type,
