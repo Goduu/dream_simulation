@@ -39,8 +39,7 @@ def movement_possible(board: Board, player: Player, coord: HexCoordinates,
 
 def check_movement_possibilities(board: Board, player: Player):
     mov_possibilities: List[MovPossibility] = list()
-    if(player.cubes == 0):
-        return mov_possibilities
+    
     for occupied_hexagon in player.occupied_hexagons:
         surrounding_coordinates = occupied_hexagon.get_surroundings()
         for sur_coord in surrounding_coordinates:

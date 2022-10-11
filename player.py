@@ -19,7 +19,7 @@ class HexType(Enum):
 
 class Hex:
 
-    def __init__(self,id, coordinates: HexCoordinates, type: HexType) -> None:
+    def __init__(self, id, coordinates: HexCoordinates, type: HexType) -> None:
         self.id = id
         self.coordinates = coordinates
         self.type = type
@@ -43,11 +43,11 @@ class Hex:
 
 def get_hex_point(self, type: HexType):
     if type == HexType.RED:
-        return 1 
+        return 1
     if type == HexType.DOUBLE_RED:
         return 2
     if type == HexType.GREEN:
-        return 1 
+        return 1
     if type == HexType.DOUBLE_GREEN:
         return 2
     if type == HexType.BLUE:
@@ -59,8 +59,9 @@ def get_hex_point(self, type: HexType):
     if type == HexType.START:
         return 0
 
+
 class PlayerScore:
-    def __init__(self,red = 0,  green = 0, blue = 0, material=4) -> None:
+    def __init__(self, red=0,  green=0, blue=0, material=4) -> None:
         self.red = red
         self.blue = blue
         self.green = green
@@ -157,7 +158,6 @@ class Player:
         self.score = PlayerScore()
         self.skills: List[PlayerSkill] = skills
 
-
     def __repr__(self):
         return f"<Player \n name:{self.name}  \n start_point:{self.start_point} \n occupied_coordinates:{self.occupied_hexagons}  \n cubes:{self.cubes}  >"
 
@@ -195,8 +195,6 @@ class Player:
                 return
 
     def check_termination(self, mov_possibilities, buy_possibilities):
-        
-        return (self.cubes == 0 or len(mov_possibilities) == 0) and len(buy_possibilities) == 0
-
-        
-
+        print("---------- checking", len(buy_possibilities), len(mov_possibilities), self.cubes)
+        self.terminated = (self.cubes == 0 or len(
+            mov_possibilities) == 0) and len(buy_possibilities) == 0

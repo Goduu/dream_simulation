@@ -35,17 +35,14 @@ env.initialize_game()
 
 end_game = False
 i = 0
+observation = env.observe()
 while not end_game:
     
-    observation = env.observe()
-
     action = random_policy(observation)
-    # env.board.plot_board(i, env.current_player.name)
-    if action == None:
-        env.pass_current_player()
-    else:
-        observation, end_game = env.step(action)
+    observation, end_game = env.step(action)
     
+    # env.pass_current_player()
+    # env.board.plot_board(i, env.current_player.name)
     i +=1
 
 

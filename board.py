@@ -91,5 +91,5 @@ class Board:
             facecolor='auto',
             edgecolor='auto',
         )
-        # plt.show()
+        plt.show()
         plt.close()
