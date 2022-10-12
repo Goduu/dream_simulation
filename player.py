@@ -156,7 +156,7 @@ class Player:
         self.cubes = cubes
         self.partialScore = PlayerScore()
         self.score = PlayerScore()
-        self.skills: List[PlayerSkill] = skills
+        self.skills = skills
 
     def __repr__(self):
         return f"<Player \n name:{self.name}  \n start_point:{self.start_point} \n occupied_coordinates:{self.occupied_hexagons}  \n cubes:{self.cubes}  >"
@@ -195,6 +195,5 @@ class Player:
                 return
 
     def check_termination(self, mov_possibilities, buy_possibilities):
-        print("---------- checking", len(buy_possibilities), len(mov_possibilities), self.cubes)
         self.terminated = (self.cubes == 0 or len(
             mov_possibilities) == 0) and len(buy_possibilities) == 0

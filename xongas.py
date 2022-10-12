@@ -2,13 +2,13 @@
 
 import hashlib
 import random
-from board import Board
+from data_collector import DataCollector
 from dream_env import DreamEnv, Observation
 import numpy as np
 from hex_coordinates import HexCoordinates
+import numpy as np
 
-from player import Hex, Player
-
+data_collector = DataCollector()
 
 
 def random_policy(observation: Observation):
@@ -28,25 +28,27 @@ def encode_state(observation):
     return (state)
 
 
+for i in range(1000):
+    env = DreamEnv()
+    env.initialize_game()
 
+    end_game = False
+    observation = env.observe()
+    while not end_game:
+        
+        action = random_policy(observation)
+        observation, end_game = env.step(action)
+        
+        # env.pass_current_player()
+        # env.board.plot_board(i, env.current_player.name)
 
-env = DreamEnv()
-env.initialize_game()
-
-end_game = False
-i = 0
-observation = env.observe()
-while not end_game:
-    
-    action = random_policy(observation)
-    observation, end_game = env.step(action)
-    
-    # env.pass_current_player()
-    # env.board.plot_board(i, env.current_player.name)
+    data_collector.collect(env.board.players)
     i +=1
 
+    if(i % 100 == 0): print(i)
 
-for player in env.board.players:
-    print(player.name)
-    print(player.score)
+
+# data_collector.plot_resource_analysis()
+data_collector.plot_player_analysis()
+
 

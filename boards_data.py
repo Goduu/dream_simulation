@@ -1,7 +1,7 @@
 
 from board import Board
 from hex_coordinates import HexCoordinates
-from player import Hex, Player
+from player import Hex, Player, PlayerSkill, PlayerSkillType
 
 
 p1_start_coord = HexCoordinates(0, -2, 2)
@@ -31,12 +31,7 @@ material_one = Hex(14, coordinates=HexCoordinates(0, -1, 1), type="material")
 material_two = Hex(15, coordinates=HexCoordinates(0, 1, -1), type="material")
 
 
-p1 = Player(0, "player_0", start_point=start_one, cubes=3, skills=[])
-p2 = Player(1, "player_1", start_point=start_two, cubes=3, skills=[])
-p3 = Player(2, "player_2", start_point=start_three, cubes=3, skills=[])
-p4 = Player(3, "player_3", start_point=start_four, cubes=3, skills=[])
-players = [p1, p2, p3, p4]
-
+skillReset = PlayerSkill(PlayerSkillType.RESET, 1)
 
 hexs = [
     start_one, start_two, start_three, start_four, red_one, red_two, red_three,
@@ -52,5 +47,5 @@ players = [p1, p2, p3, p4]
 board = Board()
 for hex in hexs:
     board.add_hex(hex)
-for player in players: 
+for player in players:
     board.add_player(player)

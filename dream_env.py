@@ -58,7 +58,7 @@ class DreamEnv:
         for buy in buy_possibilities:
             action_mask[hex_number + buy.id] = 1
 
-        obs_array = np.zeros([len(self.board.hexs), 2], "int8")
+        obs_array = np.zeros([hex_number, 2], "int8")
         for player in self.board.players:
             for occupied in player.occupied_hexagons:
                 if (player.id == self.current_player.id):
@@ -73,12 +73,14 @@ class DreamEnv:
     def get_movement_by_action(self, action, mov_possibilities: List[MovPossibility]):
         target_hex = None
         from_hex = None
+        with_skill = []
         for possibility in mov_possibilities:
             if (possibility.target_hex.id == action):
                 target_hex = possibility.target_hex
                 from_hex = possibility.from_hex
+                with_skill = possibility.with_skill
 
-        return target_hex, from_hex
+        return target_hex, from_hex, with_skill
 
     def get_reward_by_action(self, action):
         reward_id = action - len(self.board.hexs)
@@ -123,11 +125,11 @@ class DreamEnv:
         if (not self.current_player.terminated):
             action_type = self.get_action_type(action)
             if (action_type == "mov"):
-                target_hex, from_hex = self.get_movement_by_action(
+                target_hex, from_hex, with_skill = self.get_movement_by_action(
                     action, mov_possibilities)
                 if (target_hex):
                     mov_player(self.board, from_hex,
-                               target_hex, self.current_player.start_point)
+                               target_hex, self.current_player.start_point,with_skill)
             else:
                 reward_to_buy = self.get_reward_by_action(action)
                 self.reward_store.buy_reward(

@@ -80,10 +80,16 @@ rewards = [
     Reward(id= 31,cost = PlayerScore(2,2,2)),
     Reward(id= 32,cost = PlayerScore(1,1,1)),
     Reward(id= 33,cost = PlayerScore(4,4,4)),
+    Reward(id= 34,cost = PlayerScore(2,2,1)),
+    Reward(id= 35,cost = PlayerScore(2,1,2)),
+    Reward(id= 36,cost = PlayerScore(1,2,2)),
+    Reward(id= 37,cost = PlayerScore(1,1,2)),
+    Reward(id= 38,cost = PlayerScore(2,1,1)),
+    Reward(id= 39,cost = PlayerScore(1,2,1)),
 ]
 
 
-REWARDS_ON_STORE = 30
+REWARDS_ON_STORE = 8
 
 class RewardStore: 
     def __init__(self) -> None:
@@ -114,6 +120,5 @@ class RewardStore:
         available_rewards = [rewards for rewards in self.rewards if rewards.available]
         if(len(available_rewards) > 0):
             new_reward = random.choice(available_rewards)
-            print('NEW REWARD', new_reward)
             self.rewards_selling.append(new_reward)
             new_reward.available = False

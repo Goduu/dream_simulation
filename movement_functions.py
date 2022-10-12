@@ -1,4 +1,5 @@
 
+import random
 from typing import List
 from xmlrpc.client import boolean
 from board import Board
@@ -39,7 +40,7 @@ def movement_possible(board: Board, player: Player, coord: HexCoordinates,
 
 def check_movement_possibilities(board: Board, player: Player):
     mov_possibilities: List[MovPossibility] = list()
-    
+
     for occupied_hexagon in player.occupied_hexagons:
         surrounding_coordinates = occupied_hexagon.get_surroundings()
         for sur_coord in surrounding_coordinates:
@@ -72,22 +73,48 @@ def check_push_action(board: Board, player: Player, coord: HexCoordinates, coord
             with_skill.append(PlayerSkillType.PUSH_ROW)
         if (player.check_skill(PlayerSkillType.RESET)):
             with_skill.append(PlayerSkillType.RESET)
+        if (player.check_skill(PlayerSkillType.SWITCH)):
+            with_skill.append(PlayerSkillType.SWITCH)
+
+    else:
+        if (player.check_skill(PlayerSkillType.PUSH_BORDER)):
+            with_skill.append(PlayerSkillType.PUSH_BORDER)
+
     return_val.is_possible = len(with_skill) > 0
     return_val.with_skill = with_skill
     return return_val
 
 
+def push_action(target_player, from_hex, target_hex, board):
+    if (target_player and isinstance(target_player, Player)):
+        push_player(pushed_player=target_player, board=board,
+                    from_hex=from_hex, target_hex=target_hex)
+
+
+def push_with_skill(target_player: Player, from_player: Player, target_hex: Hex, with_skill: List[PlayerSkillType]):
+    chosen_skill = random.choice(with_skill)
+    if (chosen_skill == PlayerSkillType.PUSH_ROW):
+        return
+    elif (chosen_skill == PlayerSkillType.RESET):
+        simple_move(target_hex, target_player.start_point)
+        from_player.use_skill(chosen_skill)
+    elif (chosen_skill == PlayerSkillType.SWITCH):
+        return
+
+
 # can just be move if movement is possible
 def mov_player(board: Board, from_hex: Hex,
-               target_hex: Hex, start_hex: Hex):
+               target_hex: Hex, start_hex: Hex, with_skill: List[PlayerSkillType]):
     from_player = from_hex.player_occupation
-    if(from_player):
+    if (from_player):
         target_player = target_hex.occupation_number and target_hex.player_occupation
 
-        # push movement
-        if (target_player and isinstance(target_player, Player)):
-            push_player(pushed_player=target_player, board=board,
-                        from_hex=from_hex, target_hex=target_hex)
+        if len(with_skill) == 0:
+            # push movement
+            push_action(target_player, from_hex, target_hex, board)
+        else:
+            push_with_skill(target_player, from_player, target_hex,
+                            with_skill)
 
         # if he is in a start point from another player
         if (start_hex.occupation_number == 0):
@@ -99,34 +126,34 @@ def mov_player(board: Board, from_hex: Hex,
         from_player.cubes -= 1
 
 
-def mov_player_with_skill(board: Board, from_hex: Hex,
-                          target_hex: Hex, start_hex: Hex, skill: PlayerSkillType):
-    from_player = from_hex.player_occupation
-    target_player = len(target_hex.player_occupation
-                        ) > 0 and target_hex.player_occupation
+# def mov_player_with_skill(board: Board, from_hex: Hex,
+#                           target_hex: Hex, start_hex: Hex, skill: PlayerSkillType):
+#     from_player = from_hex.player_occupation
+#     target_player = len(target_hex.player_occupation
+#                         ) > 0 and target_hex.player_occupation
 
-    # push movement
-    if (target_player and isinstance(target_player, Player)):
-        if (skill == PlayerSkillType.RESET):
-            use_reset_skill(from_player=from_player,
-                            target_player=target_player, target_player_hex=target_hex)
+#     # push movement
+#     if (target_player and isinstance(target_player, Player)):
+#         if (skill == PlayerSkillType.RESET):
+#             use_reset_skill(from_player=from_player,
+#                             target_player=target_player, target_player_hex=target_hex)
 
-            target_player.partialScore.sub_score(target_hex)
+#             target_player.partialScore.sub_score(target_hex)
 
-    if (start_hex.player_occupation == 0):
-        simple_move(from_hex, target_hex)
-    else:
-        simple_move(start_hex, target_hex)
-    from_player.partialScore.add_score(target_hex)
+#     if (start_hex.player_occupation == 0):
+#         simple_move(from_hex, target_hex)
+#     else:
+#         simple_move(start_hex, target_hex)
+#     from_player.partialScore.add_score(target_hex)
 
-    from_player.cubes -= 1
+#     from_player.cubes -= 1
 
 
 def simple_move(from_hexagon: Hex, target_hexagon: Hex):
     from_player: Player = from_hexagon.player_occupation
 
     target_hexagon.player_occupation = from_player
-    target_hexagon.occupation_number = 1
+    target_hexagon.occupation_number += 1
 
     from_player.occupied_hexagons.append(target_hexagon)
 
