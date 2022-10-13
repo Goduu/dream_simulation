@@ -60,7 +60,7 @@ class DataCollector:
         axs[3].set_title("Reward")
         axs[4].set_title("Acc")
         plt.savefig(
-            IMG_URL +"/resource_analysis" +
+            IMG_URL +"/SkillResetresource_analysis" +
             str(len(score.red)) + ".png",
             dpi='figure',
             format=None,
@@ -112,7 +112,7 @@ class DataCollector:
 
         plt.tight_layout()
         plt.savefig(
-            IMG_URL + "/player_analysis" +
+            IMG_URL + "/SkillResetplayer_analysis" +
             str(len(score.player_0)) + ".png",
             dpi='figure',
             format=None,

@@ -48,7 +48,7 @@ for i in range(1000):
     if(i % 100 == 0): print(i)
 
 
-# data_collector.plot_resource_analysis()
+data_collector.plot_resource_analysis()
 data_collector.plot_player_analysis()
 
 

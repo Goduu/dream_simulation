@@ -39,10 +39,10 @@ hexs = [
     green_three, material_one, material_two
 ]
 
-p1 = Player(0, "player_0", start_point=start_one, cubes=3, skills=[])
-p2 = Player(1, "player_1", start_point=start_two, cubes=3, skills=[])
-p3 = Player(2, "player_2", start_point=start_three, cubes=3, skills=[])
-p4 = Player(3, "player_3", start_point=start_four, cubes=3, skills=[])
+p1 = Player(0, "player_0", start_point=start_one, cubes=3, skills=[skillReset])
+p2 = Player(1, "player_1", start_point=start_two, cubes=3, skills=[skillReset])
+p3 = Player(2, "player_2", start_point=start_three, cubes=3, skills=[skillReset])
+p4 = Player(3, "player_3", start_point=start_four, cubes=3, skills=[skillReset])
 players = [p1, p2, p3, p4]
 board = Board()
 for hex in hexs:

@@ -53,7 +53,12 @@ def check_movement_possibilities(board: Board, player: Player):
                     with_skill=mov_possible.with_skill)
                 mov_possibilities.append(mov_possibility)
 
-    return mov_possibilities
+    movs_without_skill = [
+        mov for mov in mov_possibilities if len(mov.with_skill) == 0]
+    if (len(movs_without_skill) == 0 and  len(mov_possibilities) > 0 ):
+        return mov_possibilities
+    else:
+        return movs_without_skill
 
 
 def check_push_action(board: Board, player: Player, coord: HexCoordinates, coord_target: HexCoordinates):

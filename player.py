@@ -133,7 +133,7 @@ class PlayerSkillType(Enum):
     EXTRA_MOVE = "extra-move"       # Move one of your cubes on the board
     THROW_BEHIND = "throw-behind"   # Move someone adjacent, to a tile behind you
     RELOAD = "reload"               # Reload your white material
-    CHANGE_START = "change-start"   # Change start place
+    CHANGE_START = "change-start"   # Use a start point from another player for one cube
     RESET_MIDDLE = "reset-middle"   # Reset a cube in the middle of 2 of yours
     DOUBLE_MOVE = "reset-middle"    # Move 2 Hexagons without pushing
     COEXIST = "coexist"             # You can move to another players hex without moving him
