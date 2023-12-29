@@ -1,7 +1,7 @@
 import copy
 from boards_data import board
 import random
-from movement_functions import check_movement_possibilities, mov_player, mov_player_with_skill
+from movement_functions import check_movement_possibilities, mov_player
 import numpy as np
 from player import PlayerSkillType
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                             if (len(chosen_move["with_skill"]) > 0):
                                 chosen_skill = random.sample(
                                     chosen_move["with_skill"], 1)[0]
-                                mov_player_with_skill(round_board, from_hex=chosen_move["from_hex"],
+                                mov_player(round_board, from_hex=chosen_move["from_hex"],
                                                       target_hex=chosen_move["target_hex"], start_hex=player.start_point, skill=chosen_skill)
                             else:
                                 mov_player(round_board, from_hex=chosen_move["from_hex"],

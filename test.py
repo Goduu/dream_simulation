@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import numpy as np
 
-coord = [[0,0,0],[0,1,-1],[-1,1,0],[-1,0,1],[0,-1,1],[1,-1,0],[1,0,-1]]
-colors = [["Green"],["Blue"],["Green"],["Green"],["Red"],["Green"],["Green"]]
-labels = [['yes'],['no'],['yes'],['no'],['yes'],['no'],['no']]
+coord = [[0, 0, 0], [0, 1, -1], [-1, 1, 0], [-1, 0, 1], [0, -1, 1], [1, -1, 0], [1, 0, -1],
+         [1, -2, 1], [2, -2, 0], [2, -1, -1], [2, 0, -2], [1, 1, -2], [0, 2, -2], [-1, 2, -1],
+         [-2, 2, 0], [-2, 1, 1], [-2, 0, 2], [-1, -1, 2], [0, -2, 2]]
+
+colors = [(0, 1, 0, 1), (0, 0, 1, 1), (0, 1, 0, 1), (0, 1, 0, 1), (1, 0, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (0, 1, 0, 1), (0, 1, 0, 1), (1, 0, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (1, 0, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1)]
+labels = [['yes'],['no'],['yes'],['no'],['yes'],['no'],['no'],['yes'],['no'],['yes'],['no'],['yes'],['no'],['no'],['yes'],['no'],['yes'],['no'],['yes'],['no'],['no'],['yes'],['no'],['yes'],['no'],['yes'],['no'],['no']]
 
 # Horizontal cartesian coords
 hcoord = [c[0] for c in coord]
@@ -17,7 +20,7 @@ ax.set_aspect('equal')
 
 # Add some coloured hexagons
 for x, y, c, l in zip(hcoord, vcoord, colors, labels):
-    color = c[0].lower()  # matplotlib understands lower case words for colours
+    color = c[0]  # matplotlib understands lower case words for colours
     hex = RegularPolygon((x, y), numVertices=6, radius=2. / 3., 
                          orientation=np.radians(30), 
                          facecolor=color, alpha=0.2, edgecolor='k')
@@ -26,6 +29,6 @@ for x, y, c, l in zip(hcoord, vcoord, colors, labels):
     ax.text(x, y+0.2, l[0], ha='center', va='center', size=20)
 
 # Also add scatter points in hexagon centres
-ax.scatter(hcoord, vcoord, c=[c[0].lower() for c in colors], alpha=0.5)
+ax.scatter(hcoord, vcoord, c=[c[0] for c in colors], alpha=0.5)
 
 plt.show()
