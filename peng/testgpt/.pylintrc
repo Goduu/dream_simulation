@@ -1,0 +1,5 @@
+[FORMAT]
+ignore-long-lines=^\s*(# )f.*$|printc\(.*\)
+
+[BASIC]
+good-names=q,r,s,i,j,k,id
