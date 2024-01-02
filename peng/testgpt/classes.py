@@ -53,7 +53,6 @@ class Penguin:
         ] = None  # Direction in which the penguin is moving (q,r,s,cq,cr,cs)
         self.position: Optional[Tuple[int, int, int]] = None  # Hexagon coordinates
         self.cards: List[Card] = []  # List to store penguin's cards
-        self.collision_counter = 0
         self.terminated = False
 
     def deduct_cost_tokens(self, cost: List[Tuple[str, int]]):
@@ -436,6 +435,21 @@ class Player:
             if not penguin.terminated:
                 return False
         return True
+
+    # function that print using the function printc all the penguins properties from the player in a table format
+    def print_penguins(self):
+        printc(f"Player {self.player_id} penguins:", MColors.OKBLUE)
+        printc(
+            f"{'Penguin':<10}{'Position':<10}{'Direction':<10}{'Movement':<10}{'Fishing':<10}{'Ice':<10}{'Backpack':<10}{'Cards':<10}",
+            MColors.OKBLUE,
+        )
+        for penguin in self.penguins:
+            q, r, s = penguin.position
+            direction = penguin.direction or "None"
+            printc(
+                f"{penguin.id:<10}{q},{r},{s:<10}{direction:<10}{penguin.movement_tokens:<10}{penguin.fishing_tokens:<10}{penguin.ice_tokens:<10}{penguin.max_backpack_slots - len(penguin.backpack):<10}{[card.short_name for card in penguin.cards]}",
+                MColors.OKBLUE,
+            )
 
 
 class ActionType(Enum):

@@ -29,5 +29,13 @@ def get_outer_hexagons_coordinates():
     return outer_hexagons_coordinates
 
 
+def get_start_point_direction_possible_coordinates():
+    possible_coordinates = outer_hexagons_coordinates.copy()
+    possible_coordinates.extend(
+        [(1, -2, 1), (2, -1, -1), (1, 1, -2), (-1, 2, -1), (-2, 1, 1), (-1, -1, 2)]
+    )
+    return possible_coordinates
+
+
 def get_second_outer_hexagons_coordinates():
     return second_outer_hexagons_coordinates

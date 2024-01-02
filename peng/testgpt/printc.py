@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 
 
 class MColors(Enum):
@@ -11,8 +12,16 @@ class MColors(Enum):
     BOLD = ("[1m",)
     UNDERLINE = ("[4m",)
 
+logging.basicConfig(filename="./log.txt",
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
+
 
 def printc(message: str, color: MColors = MColors.OKBLUE) -> None:
+    logging.info(message)
     print(f"\033{color.value[0]}{message}\033[0m")
 
 

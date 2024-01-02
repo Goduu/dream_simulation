@@ -19,6 +19,7 @@ from get_possible_actions import get_possible_actions
 from printc import printc, MColors, emojis
 from utils import (
     calculate_new_position,
+    check_for_collision,
     get_available_adjacent_hexagons,
     get_hexagon,
     has_enough_tokens,
@@ -176,10 +177,6 @@ class FishyPenguinsGame:
                 MColors.WARNING,
             )
             self.pass_season(current_player)
-            for pen in current_player.penguins:
-                printc(
-                    f"Penguin {pen.id} terminated: {pen.terminated}", MColors.WARNING
-                )
             self.move_to_next_player()
             return False
 
@@ -210,10 +207,11 @@ class FishyPenguinsGame:
 
         # Implement logic for player actions (move, break ice, buy card, etc.) for each penguin
         possible_actions = get_possible_actions(
-            player, penguin, self.board, self.card_market
+            player, penguin, self.board, self.card_market, self.players
         )
+        # printc(f"possible action for {penguin.id}:{ possible_actions}", MColors.OKCYAN)
         if not possible_actions:
-            printc("No actions available for this penguin.", MColors.WARNING)
+            printc(f"No actions available for this penguin. Moves left: {penguin.movement_tokens}", MColors.WARNING)
             penguin.terminated = True
             return
         actions = random.choice(possible_actions)
@@ -223,6 +221,7 @@ class FishyPenguinsGame:
                 penguin.move_to_start_point(position, direction)
             elif action.type == "turn":
                 penguin.direction = action.parameter
+                printc(f"{emojis['turn']}Penguin {penguin.id} turns to direction {penguin.direction}", MColors.OKGREEN)
             elif action.type == "move":
                 self.handle_move_penguin(penguin, action.parameter)
             elif action.type == "break_ice":
@@ -262,45 +261,22 @@ class FishyPenguinsGame:
             direction = penguin.direction
 
             # Implement logic to update the penguin's position based on the chosen direction and hexagons to move
+            printc(
+                f"{emojis['move']}Penguin {penguin.id} moves {hexagons_to_move} hexagons in direction {direction}",
+                MColors.OKGREEN,
+            )
             for _ in range(hexagons_to_move):
                 new_position = calculate_new_position(penguin.position, direction, 1)
 
                 # Check for collisions with other penguins
-                collision_penguin = self.check_for_collision(new_position, penguin)
+                collision_penguin = check_for_collision(new_position, penguin, self.players)
                 if collision_penguin:
                     self.handle_collision(penguin, collision_penguin)
                 else:
                     penguin.move_penguin(new_position)
-                    printc(
-                        f"{emojis['move']}Penguin {penguin.id} moved to {penguin.position}",
-                        MColors.OKGREEN,
-                    )
 
         else:
             printc("Not enough movement tokens left for this penguin.", MColors.WARNING)
-
-    def check_for_collision(
-        self, new_position: Tuple[int, int, int], moving_penguin: Penguin
-    ) -> Union[Penguin, None]:
-        """
-        Checks for collision between penguins.
-
-        Args:
-            new_position (Tuple[int, int, int]): The new position to check for collision.
-            moving_penguin (Penguin): The penguin that is moving.
-
-        Returns:
-            Union[Penguin, None]: The collided penguin if there is a collision, None otherwise.
-        """
-        # Implement logic to check for collisions with other penguins
-        for player in self.players:
-            for other_penguin in player.penguins:
-                if (
-                    other_penguin != moving_penguin
-                    and other_penguin.position == new_position
-                ):
-                    return other_penguin
-        return None
 
     def position_occupied(self, position: Tuple[int, int, int]) -> bool:
         """
@@ -377,6 +353,7 @@ class FishyPenguinsGame:
             reverse_other_penguin_direction = other_penguin.reverse_direction()
             if reverse_other_penguin_direction != direction:
                 return reverse_other_penguin_direction
+        printc("No direction found", MColors.FAIL)
         return None
 
     def handle_collision(self, moving_penguin: Penguin, collided_penguin: Penguin):
@@ -388,12 +365,15 @@ class FishyPenguinsGame:
             collided_penguin (Penguin): The penguin that collided with the moving penguin.
         """
         printc(
-            f"{emojis['collision']}Collision between penguin at {moving_penguin.position} and {collided_penguin.position}",
+            f"{emojis['collision']}Collision between penguins at {moving_penguin.id}{moving_penguin.position} and {collided_penguin.id}{collided_penguin.position}",
             MColors.OKCYAN,
         )
 
         # Check ice tokens to determine the winner
-        if moving_penguin.ice_tokens > collided_penguin.ice_tokens:
+        if (
+            moving_penguin.ice_tokens > collided_penguin.ice_tokens
+            or collided_penguin.direction is None
+        ):
             # search for an unoccupied and not ice blocked hexagon in clockwise sense and move the losing penguin
             direction_to_push = self.find_direction_to_push(
                 collided_penguin.position, collided_penguin.direction, moving_penguin
@@ -405,15 +385,8 @@ class FishyPenguinsGame:
             new_position = calculate_new_position(
                 moving_penguin.position, moving_penguin.direction, 1
             )
-            self.move_penguin(moving_penguin, new_position)
-            if collided_penguin.collision_counter > 5:
-                printc(
-                    f"Collided penguin has been in {collided_penguin.collision_counter} collisions and is terminated.",
-                    MColors.FAIL,
-                )
-                return
+            moving_penguin.move_penguin(new_position)
             # Moving penguin continues in the hexagon, collided penguin is moved to an adjacent empty hexagon
-            collided_penguin.collision_counter += 1
             collided_penguin.direction = direction_to_push
             printc(
                 f"Changing direction from penguin {collided_penguin.id} from {collided_penguin.direction} to {direction_to_push}",
@@ -422,40 +395,21 @@ class FishyPenguinsGame:
             self.handle_move_penguin(collided_penguin, hexagons_to_move=1)
         elif moving_penguin.ice_tokens < collided_penguin.ice_tokens:
             direction_to_push = self.find_direction_to_push(
-                moving_penguin.position, moving_penguin.direction
+                moving_penguin.position, moving_penguin.direction, collided_penguin
             )
             printc(
                 f"Collided penguin {collided_penguin.id} wins the collision.",
                 MColors.OKGREEN,
             )
-            if moving_penguin.collision_counter > 5:
-                printc(
-                    f"Moving penguin has been in {moving_penguin.collision_counter} collisions.",
-                    MColors.FAIL,
-                )
-                return
             printc(
                 f"Changing direction from penguin {moving_penguin.id} from {moving_penguin.direction} to {direction_to_push}",
                 MColors.OKGREEN,
             )
             moving_penguin.direction = direction_to_push
             # Collided penguin continues in the hexagon, moving penguin is moved to an adjacent empty hexagon
-            moving_penguin.collision_counter += 1
             self.handle_move_penguin(moving_penguin, hexagons_to_move=1)
         else:
             printc("It's a tie! Both penguins are pushed", MColors.OKGREEN)
-            if moving_penguin.collision_counter > 5:
-                printc(
-                    f"Moving penguin has been in {moving_penguin.collision_counter} collisions.",
-                    MColors.FAIL,
-                )
-                return
-            if collided_penguin.collision_counter > 5:
-                printc(
-                    f"Collided penguin has been in {collided_penguin.collision_counter} collisions.",
-                    MColors.FAIL,
-                )
-                return
             direction_to_push_moving = self.find_direction_to_push(
                 moving_penguin.position, moving_penguin.direction, collided_penguin
             )
@@ -474,44 +428,6 @@ class FishyPenguinsGame:
                 MColors.OKGREEN,
             )
             self.handle_move_penguin(collided_penguin, hexagons_to_move=1)
-
-    def handle_collision(self, moving_penguin: Penguin, collided_penguin: Penguin):
-        printc(
-            f"{emojis['collision']}Collision between penguins at {moving_penguin.position} and {collided_penguin.position}",
-            MColors.OKCYAN,
-        )
-
-        # Check ice tokens to determine the winner
-        if moving_penguin.ice_tokens > collided_penguin.ice_tokens:
-            winner, loser = moving_penguin, collided_penguin
-        elif moving_penguin.ice_tokens < collided_penguin.ice_tokens:
-            winner, loser = collided_penguin, moving_penguin
-        else:
-            printc("It's a tie! Both penguins are pushed", MColors.OKGREEN)
-            self.handle_move_penguin(moving_penguin, hexagons_to_move=1)
-            self.handle_move_penguin(collided_penguin, hexagons_to_move=1)
-            return
-
-        printc(f"Penguin {winner.id} wins the collision.", MColors.OKGREEN)
-        direction_to_push = self.find_direction_to_push(
-            loser.position, loser.direction, winner
-        )
-        printc(
-            f"Changing direction from penguin {loser.id} from {loser.direction} to {direction_to_push}",
-            MColors.OKGREEN,
-        )
-
-        loser.direction = direction_to_push
-        loser.collision_counter += 1
-
-        if loser.collision_counter > 5:
-            printc(
-                f"Penguin {loser.id} has been in {loser.collision_counter} collisions and is terminated.",
-                MColors.FAIL,
-            )
-            return
-
-        self.handle_move_penguin(loser, hexagons_to_move=1)
 
     def fish(self, penguin: Penguin):
         """
