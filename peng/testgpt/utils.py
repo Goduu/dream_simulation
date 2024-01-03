@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple, Union
 
 from classes import Hexagon, Penguin, Player
 from constants import get_start_point_direction_possible_coordinates
-from printc import MColors, printc
+from printc import MColors, printc, emojis
 
 
 def calculate_new_position(
@@ -10,6 +10,7 @@ def calculate_new_position(
 ) -> Tuple[int, int, int]:
     # Implement logic to calculate the new position based on the chosen direction and hexagons to move
     q, r, s = current_position
+    
     if direction == "q":
         r -= hexagons_to_move
         s += hexagons_to_move
@@ -29,7 +30,7 @@ def calculate_new_position(
         q += hexagons_to_move
         r -= hexagons_to_move
     else:
-        printc(f"Invalid direction: {direction}", MColors.FAIL)
+        printc(f"Invalid direction: {direction} [calculate_new_position]", MColors.FAIL)
         pass
     return (q, r, s)
 
@@ -41,35 +42,38 @@ def coordinate_available(
     Check if the coordinates are available in the board
     and there is no ice block in the hexagon.
     If there is an collision with a penguin, check if the penguin can move to another hexagon.
-    
-    Params:
-    board: List of hexagons
-    coordinates: Coordinates to check
-    
-    Returns:
-    True if the coordinates are available, False otherwise
+
     """
-    for hexagon in board:
-        if hexagon.get_coordinates() == coordinates:
-            if not hexagon.has_ice_block:
-                collided_penguin = check_hexagon_has_penguin(hexagon.get_coordinates(), players)
-                if collided_penguin:
-                    available_adjacent_hexagons = get_available_adjacent_hexagons(board, collided_penguin.position, players)
-                    if( not available_adjacent_hexagons):
-                        return False
-                return True
+    board_hexagon = get_hexagon(board, coordinates)
+    if board_hexagon is None:
+        return False
+
+    if board_hexagon.has_ice_block:
+        return False
+
+    collided_penguin = get_hexagon_penguin(board_hexagon.get_coordinates(), players)
+
+    if collided_penguin is None:
+        return True
+
+    available_adjacent_hexagons = get_available_adjacent_hexagons(
+        board, collided_penguin.position, players
+    )
+
+    if available_adjacent_hexagons != []:
+        return True
+
     return False
 
-def check_hexagon_has_penguin(coordinates: Tuple[int, int, int], players: List[Player]) -> Union[Penguin, None]:
+
+def get_hexagon_penguin(
+    coordinates: Tuple[int, int, int], players: List[Player]
+) -> Union[Penguin, None]:
     """
     Check if the coordinates are available in the board
     and there is no ice block in the hexagon.
     If there is an collision with a penguin, check if the penguin can move to another hexagon.
-    
-    Params:
-    board: List of hexagons
-    coordinates: Coordinates to check
-    
+
     Returns:
     True if the coordinates are available, False otherwise
     """
@@ -79,30 +83,83 @@ def check_hexagon_has_penguin(coordinates: Tuple[int, int, int], players: List[P
                 return penguin
     return None
 
+def outside_hexagon(coordinates: Tuple[int, int, int]) -> bool:
+    """
+    Check if the coordinates are outside the board
+    """
+    q, r, s = coordinates
+    return abs(q) >= 3 or abs(r) >= 3 or abs(s) >= 3
+
+def hexagon_empty(
+    board: List[Hexagon], players: List[Player], coordinates: Tuple[int, int, int]
+) -> bool:
+    """
+    Check if the coordinates are available in the board
+
+    Returns:
+    True if the coordinates are available, False otherwise
+    """
+    board_hexagon = get_hexagon(board, coordinates)
+    if board_hexagon is None:
+        return False
+
+    if board_hexagon.has_ice_block:
+        return False
+
+    collided_penguin = get_hexagon_penguin(board_hexagon.get_coordinates(), players)
+
+    if collided_penguin is None:
+        return True
+
+    return False
+
+
 def check_for_collision(
-         new_position: Tuple[int, int, int], moving_penguin: Penguin, players: List[Player]
-    ) -> Union[Penguin, None]:
+    new_position: Tuple[int, int, int], moving_penguin: Penguin, players: List[Player]
+) -> Union[Penguin, None]:
+    """
+    Checks for collision between penguins.
+
+    Args:
+        new_position (Tuple[int, int, int]): The new position to check for collision.
+        moving_penguin (Penguin): The penguin that is moving.
+
+    Returns:
+        Union[Penguin, None]: The collided penguin if there is a collision, None otherwise.
+    """
+    # Implement logic to check for collisions with other penguins
+    for player in players:
+        for other_penguin in player.penguins:
+            if (
+                other_penguin != moving_penguin
+                and other_penguin.position == new_position
+            ):
+                return other_penguin
+    return None
+
+
+def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction: str):
         """
-        Checks for collision between penguins.
-
-        Args:
-            new_position (Tuple[int, int, int]): The new position to check for collision.
-            moving_penguin (Penguin): The penguin that is moving.
-
-        Returns:
-            Union[Penguin, None]: The collided penguin if there is a collision, None otherwise.
+        Pushes a penguin to a new position.
         """
-        # Implement logic to check for collisions with other penguins
-        for player in players:
-            for other_penguin in player.penguins:
-                if (
-                    other_penguin != moving_penguin
-                    and other_penguin.position == new_position
-                ):
-                    return other_penguin
-        return None
-    
+        if(outside_hexagon(new_position)):
+            printc(f"Penguin {penguin.id} is peeing pushed outside", MColors.OKCYAN)
+            penguin.position = None
+            penguin.direction = None
+            return
+        
+        penguin.direction = direction
+        printc(
+            f"{emojis['turn']}Changing direction from penguin {penguin.id} from {penguin.direction} to {direction} to push to {new_position}",
+            MColors.OKGREEN,
+        )
 
+        penguin.position = new_position
+        printc(
+            f"{emojis['move']}Penguin {penguin.id} pushed to {penguin.position}",
+            MColors.OKGREEN,
+        )
+        
 def get_start_point_surrounding_directions(
     coordinates: Tuple[int, int, int]
 ) -> List[str]:
@@ -111,9 +168,7 @@ def get_start_point_surrounding_directions(
     directions = []
     for s_coordinates in surroundings_coordinates:
         if s_coordinates in get_start_point_direction_possible_coordinates():
-            dq, dr, ds = s_coordinates
-            q, r, s = coordinates
-            direction = calculate_direction(q, r, s, dq, dr, ds)
+            direction = calculate_direction(coordinates, s_coordinates)
             directions.append(direction)
 
     return directions
@@ -131,10 +186,14 @@ def get_surroundings(coordinates: Tuple[int, int, int]) -> List[Tuple[int, int, 
     ]
 
 
-def calculate_direction(q1, r1, s1, q2, r2, s2):
+def calculate_direction(
+    coordinates1: Tuple[int, int, int], coordinates2: Tuple[int, int, int]
+):
     """
     Calculates the direction between two hexagons.
     """
+    q1, r1, s1 = coordinates1
+    q2, r2, s2 = coordinates2
     dq, dr, ds = q2 - q1, r2 - r1, s2 - s1
 
     if dq == 0 and dr == 0 and ds == 0:
@@ -165,9 +224,9 @@ def get_adjacent_hexagons(
     surroundings = get_surroundings(coordinates)
     adjacent_hexagons: List[Hexagon] = []
     for surrounding_coordinates in surroundings:
-        for hexagon in board:
-            if hexagon.get_coordinates() == surrounding_coordinates:
-                adjacent_hexagons.append(hexagon)
+        board_hexagon = get_hexagon(board, surrounding_coordinates)
+        if board_hexagon is not None:
+            adjacent_hexagons.append(board_hexagon)
     return adjacent_hexagons
 
 
@@ -176,17 +235,8 @@ def get_available_adjacent_hexagons(
 ) -> List[Hexagon]:
     """
     Retrieves the available adjacent hexagons for a given hexagon.
+    No ice blocks or penguins are allowed in the adjacent hexagons.
 
-    This function takes a hexagon coordinate as input and returns a list of hexagons
-    that are adjacent to it and are not blocked.
-
-    Parameters:
-    board List[Hexagon]: The board hexagons
-    coordinates Tuple[int, int, int]: The coordinates of the hexagon to check
-    players List[Player]: The list of players
-
-    Returns:
-    List[Hexagon]: A list of available adjacent hexagons.
     """
     adjacent_hexagons = get_adjacent_hexagons(board, coordinates)
     for hexagon in adjacent_hexagons:
@@ -219,8 +269,10 @@ def has_enough_tokens(penguin: Penguin, cost: List[Tuple[str, int]]) -> bool:
 
 
 def get_hexagon(board: List[Hexagon], coordinates: Tuple[int, int, int]):
-    q, r, s = coordinates
+    """
+    Returns the board hexagon for a given coordinate.
+    """
     for hexagon in board:
-        if hexagon.q == q and hexagon.r == r and hexagon.s == s:
+        if hexagon.get_coordinates() == coordinates:
             return hexagon
     return None

@@ -1,4 +1,7 @@
 # Coordinates for the outer hexagons
+import random
+
+
 outer_hexagons_coordinates = [
     (1, -1, 0),
     (1, 0, -1),
@@ -39,3 +42,57 @@ def get_start_point_direction_possible_coordinates():
 
 def get_second_outer_hexagons_coordinates():
     return second_outer_hexagons_coordinates
+
+
+fish_tiles = [
+    {
+        "type": "A",
+        "quantity": 1,
+        "probability": 1
+    },
+    {
+        "type": "A",
+        "quantity": 2,
+        "probability": 2
+    },
+    {
+        "type": "A",
+        "quantity": 3,
+        "probability": 1
+    },
+    {
+        "type": "B",
+        "quantity": 1,
+        "probability": 1
+    },
+    {
+        "type": "B",
+        "quantity": 2,
+        "probability": 2
+    },
+    {
+        "type": "B",
+        "quantity": 3,
+        "probability": 1
+    },
+    {
+        "type": "C",
+        "quantity": 1,
+        "probability": 1
+    },
+    {
+        "type": "C",
+        "quantity": 2,
+        "probability": 2
+    },
+    {
+        "type": "C",
+        "quantity": 3,
+        "probability": 1
+    },
+]
+
+# function that get one fish tile from the fish tiles list based on the probability
+def get_fish_tile():
+    fish_tile = random.choices(fish_tiles, [fish_tile["probability"] for fish_tile in fish_tiles])[0]
+    return fish_tile

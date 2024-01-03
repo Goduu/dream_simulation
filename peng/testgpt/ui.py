@@ -1,39 +1,8 @@
-from typing import Tuple
-from utils import MColors, printc
+from utils import calculate_new_position, printc
 from game import FishyPenguinsGame
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from matplotlib.patches import RegularPolygon
 import numpy as np
-
-
-def calculate_new_position(
-    current_position: Tuple[int, int, int], direction: str, hexagons_to_move: int
-) -> Tuple[int, int, int]:
-    # Implement logic to calculate the new position based on the chosen direction and hexagons to move
-    q, r, s = current_position
-    if direction == "q":
-        r -= hexagons_to_move
-        s += hexagons_to_move
-    elif direction == "r":
-        q += hexagons_to_move
-        s -= hexagons_to_move
-    elif direction == "s":
-        q -= hexagons_to_move
-        r += hexagons_to_move
-    elif direction == "cq":
-        r += hexagons_to_move
-        s -= hexagons_to_move
-    elif direction == "cr":
-        q -= hexagons_to_move
-        s += hexagons_to_move
-    elif direction == "cs":
-        q += hexagons_to_move
-        r -= hexagons_to_move
-    else:
-        printc(f"Invalid direction: {direction}", MColors.FAIL)
-        pass
-    return q, r, s
 
 
 def visualize_board(game: FishyPenguinsGame):
@@ -45,7 +14,7 @@ def visualize_board(game: FishyPenguinsGame):
     # Plot hexagons
     for hexagon in game.board:
         hex_coords = np.array([hexagon.q, hexagon.r, hexagon.s])
-        hex_center = hexagon_center(hex_coords, hex_size, hex_spacing)
+        hex_center = hexagon_center(hex_coords)
         hex_patch = RegularPolygon(
             hex_center,
             numVertices=6,
@@ -79,18 +48,14 @@ def visualize_board(game: FishyPenguinsGame):
                 penguin_coords = np.array(
                     [penguin.position[0], penguin.position[1], penguin.position[2]]
                 )
-                penguin_center = hexagon_center(penguin_coords, hex_size, hex_spacing)
+                penguin_center = hexagon_center(penguin_coords)
                 if penguin.direction is not None:
                     direction_coord = calculate_new_position(
                         penguin_coords, penguin.direction, 1
                     )
-                    direction_center = hexagon_center(
-                        direction_coord, hex_size, hex_spacing
-                    )
+                    direction_center = hexagon_center(direction_coord)
                     # Draw arrow to represent penguin direction
-                    draw_arrow(
-                        ax, penguin_center, direction_center, hex_size, hex_spacing
-                    )
+                    draw_arrow(ax, penguin_center, direction_center, hex_size)
 
     # Show player information
     for i, player in enumerate(game.players):
@@ -99,19 +64,19 @@ def visualize_board(game: FishyPenguinsGame):
 
     ax.set_aspect("equal", adjustable="box")
     plt.axis("off")
+    plt.autoscale(enable=True, axis="both", tight=True)
     plt.show()
 
 
-def hexagon_center(coords, hex_size, hex_spacing):
+def hexagon_center(coords):
     q, r, s = coords
     x = r
     y = 2.0 * np.sin(np.radians(60)) * (q - s) / 3.0
     return x, y
 
 
-def draw_arrow(ax, center, direction_center, hex_size, hex_spacing):
+def draw_arrow(ax, center, direction_center, hex_size):
     arrow_size = hex_size * 0.2  # Adjust arrow size
-    arrow_length = hex_size * 0.6  # Adjust arrow length
     dx, dy = direction_center[0] - center[0], direction_center[1] - center[1]
     ax.arrow(
         center[0],

@@ -45,7 +45,7 @@ class Penguin:
         ] = []  # List of tuples representing fish type and quantity
         self.ice_tokens: int = penguin_type["ice"]
         self.backpack: list[Tuple[str, str]] = [
-            ("ice", None) for i in range(penguin_type["ice"])
+            ("ice", None) for _ in range(penguin_type["ice"])
         ]  # List of tuples representing item type and fish type
         self.max_backpack_slots: int = penguin_type["slots"]
         self.direction: Optional[
@@ -123,7 +123,6 @@ class Penguin:
             f"{emojis['move']}Penguin {self.id} moved to {self.position}",
             MColors.OKGREEN,
         )
-        self.collision_counter = 0
 
     def move_to_start_point(self, position, direction):
         """
@@ -137,7 +136,7 @@ class Penguin:
         self.position = position
         self.direction = direction
         printc(
-            f"{emojis['start']}Penguin {self.id} moved to {self.position}",
+            f"{emojis['start']}Penguin {self.id} moved in the board to {self.position} direction {self.direction}",
             MColors.OKGREEN,
         )
 
@@ -171,6 +170,9 @@ class Card:
         )
         self.passive_effect = passive_effect
         self.on_play_effect = on_play_effects
+    
+    def __repr__(self) -> str:
+        return f"{self.short_name} Cost: {self.cost}"
 
 
 all_cards = [
@@ -440,14 +442,14 @@ class Player:
     def print_penguins(self):
         printc(f"Player {self.player_id} penguins:", MColors.OKBLUE)
         printc(
-            f"{'Penguin':<10}{'Position':<10}{'Direction':<10}{'Movement':<10}{'Fishing':<10}{'Ice':<10}{'Backpack':<10}{'Cards':<10}",
+            f"{'Penguin':<10}{'Position':<10}{'Direction':<10}{'Movement':<10}{'Fishing':<10}{'Ice':<10}{'Backpack':<40}{'Cards':<10}",
             MColors.OKBLUE,
         )
         for penguin in self.penguins:
-            q, r, s = penguin.position
-            direction = penguin.direction or "None"
+            q, r, s = penguin.position if penguin.position else ("-", "-", "-")
+            direction = penguin.direction or "-"
             printc(
-                f"{penguin.id:<10}{q},{r},{s:<10}{direction:<10}{penguin.movement_tokens:<10}{penguin.fishing_tokens:<10}{penguin.ice_tokens:<10}{penguin.max_backpack_slots - len(penguin.backpack):<10}{[card.short_name for card in penguin.cards]}",
+                f"{penguin.id:<10}{q},{r},{s:<10}{direction:<10}{penguin.movement_tokens:<10}{penguin.fishing_tokens:<10}{penguin.ice_tokens:<10}{f'{[item[0] for item in penguin.backpack]}':<40}{[card.short_name for card in penguin.cards]}",
                 MColors.OKBLUE,
             )
 
@@ -470,6 +472,7 @@ class ActionType(Enum):
     BREAK_ICE = "break_ice"
     FISHING = "fishing"
     TURN = "turn"
+    MOVE_OUT = "move_out"
 
 
 class Action:
