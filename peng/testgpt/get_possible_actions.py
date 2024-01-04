@@ -94,7 +94,9 @@ def add_actions_normal_movement(
                 penguin.position, penguin.direction, board, players, move_counter
             ):
                 if penguin.ice_tokens >= 1:
-                    for ice_drop_counter in range(min(penguin.ice_tokens, move_counter)):
+                    for ice_drop_counter in range(
+                        min(penguin.ice_tokens, move_counter)
+                    ):
                         ice_drop_position = calculate_new_position(
                             penguin.position, penguin.direction, ice_drop_counter
                         )
@@ -139,6 +141,57 @@ def add_actions_first_movement(
                             )
 
 
+def check_penguin_can_use_card(
+    penguin: Penguin, card: Card, possible_actions: List[Action]
+) -> bool:
+    effects = card.on_play_effect
+    for effect_key in effects:
+        effect_value = effects[effect_key]
+        if effect_value < 0:
+            if effect_key == "movement_token":
+                movement_actions = [
+                    action
+                    for action in possible_actions
+                    if action.type == "move_out" or action.type == "start"
+                ]
+                move_tokens = sum(
+                    [
+                        action.parameter
+                        for action in possible_actions
+                        if action.type == "move"
+                    ]
+                )
+                if (
+                    penguin.movement_tokens
+                    < abs(effect_value) + movement_actions.__len__() + move_tokens
+                ):
+                    return False
+            elif effect_key == "fishing_token":
+                if penguin.fishing_tokens < abs(effect_value):
+                    return False
+            elif effect_key == "ice_token":
+                if penguin.ice_tokens < abs(effect_value):
+                    return False
+            else:
+                printc(f"Effect key {effect_key} not found", MColors.FAIL)
+    return True
+
+
+def add_play_card_actions(
+    player: Player, penguin: Penguin, possible_actions: List[List[Action]]
+):
+    play_card_actions: List[Action] = []
+
+    for card in player.cards:
+        for actions in possible_actions or [[]]:
+            if check_penguin_can_use_card(penguin, card, actions):
+                actions_copy = actions.copy()
+                actions_copy.append(Action("play_card", card.short_name))
+                play_card_actions.append(actions_copy)
+
+    possible_actions.extend(play_card_actions)
+
+
 def get_possible_actions(
     player: Player,
     penguin: Penguin,
@@ -181,10 +234,7 @@ def get_possible_actions(
 
     # Check if the penguin can play cards
     if player.cards:
-        for card in player.cards:
-            for action in possible_actions:
-                action.append(Action("play_card", card.short_name, penguin))
-
+        add_play_card_actions(player, penguin, possible_actions)
     # Check if the penguin can fish
     if penguin.fishing_tokens > 0:
         for actions in possible_actions:

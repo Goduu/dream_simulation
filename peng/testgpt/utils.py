@@ -10,7 +10,7 @@ def calculate_new_position(
 ) -> Tuple[int, int, int]:
     # Implement logic to calculate the new position based on the chosen direction and hexagons to move
     q, r, s = current_position
-    
+
     if direction == "q":
         r -= hexagons_to_move
         s += hexagons_to_move
@@ -83,12 +83,14 @@ def get_hexagon_penguin(
                 return penguin
     return None
 
+
 def outside_hexagon(coordinates: Tuple[int, int, int]) -> bool:
     """
     Check if the coordinates are outside the board
     """
     q, r, s = coordinates
     return abs(q) >= 3 or abs(r) >= 3 or abs(s) >= 3
+
 
 def hexagon_empty(
     board: List[Hexagon], players: List[Player], coordinates: Tuple[int, int, int]
@@ -139,27 +141,28 @@ def check_for_collision(
 
 
 def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction: str):
-        """
-        Pushes a penguin to a new position.
-        """
-        if(outside_hexagon(new_position)):
-            printc(f"Penguin {penguin.id} is peeing pushed outside", MColors.OKCYAN)
-            penguin.position = None
-            penguin.direction = None
-            return
-        
-        penguin.direction = direction
-        printc(
-            f"{emojis['turn']}Changing direction from penguin {penguin.id} from {penguin.direction} to {direction} to push to {new_position}",
-            MColors.OKGREEN,
-        )
+    """
+    Pushes a penguin to a new position.
+    """
+    if outside_hexagon(new_position):
+        printc(f"Penguin {penguin.id} is peeing pushed outside", MColors.OKCYAN)
+        penguin.position = None
+        penguin.direction = None
+        return
 
-        penguin.position = new_position
-        printc(
-            f"{emojis['move']}Penguin {penguin.id} pushed to {penguin.position}",
-            MColors.OKGREEN,
-        )
-        
+    penguin.direction = direction
+    printc(
+        f"{emojis['turn']}Changing direction from penguin {penguin.id} from {penguin.direction} to {direction} to push to {new_position}",
+        MColors.OKGREEN,
+    )
+
+    penguin.position = new_position
+    printc(
+        f"{emojis['move']}Penguin {penguin.id} pushed to {penguin.position}",
+        MColors.OKGREEN,
+    )
+
+
 def get_start_point_surrounding_directions(
     coordinates: Tuple[int, int, int]
 ) -> List[str]:
@@ -257,10 +260,10 @@ def get_available_adjacent_hexagons(
 def has_enough_tokens(penguin: Penguin, cost: List[Tuple[str, int]]) -> bool:
     # Check if the player has enough tokens to buy the card
     current_in_slots: Dict[str, int] = {}
-    for fish_token in penguin.fish_tokens:
-        current_in_slots[fish_token.fish_type] = (
-            current_in_slots.get(fish_token.fish_type, 0) + 1
-        )
+    for item in penguin.backpack:
+        item_class, item_type = item
+        if item_class == "fish":
+            current_in_slots[item_type] = current_in_slots.get(item_type, 0) + 1
 
     for fish_type, quantity in cost:
         if current_in_slots.get(fish_type, 0) < quantity:

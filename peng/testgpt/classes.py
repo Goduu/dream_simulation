@@ -40,9 +40,6 @@ class Penguin:
         self.type = penguin_type
         self.movement_tokens: int = penguin_type["movement"]
         self.fishing_tokens: int = penguin_type["fishing"]
-        self.fish_tokens: list[
-            Tuple[str, int]
-        ] = []  # List of tuples representing fish type and quantity
         self.ice_tokens: int = penguin_type["ice"]
         self.backpack: list[Tuple[str, str]] = [
             ("ice", None) for _ in range(penguin_type["ice"])
@@ -67,14 +64,9 @@ class Penguin:
         """
         # Deduct the cost tokens from the player's penguin
         for fish_type, quantity in cost:
-            for fish_token in self.fish_tokens:
-                if fish_token.fish_type == fish_type:
-                    fish_token.quantity -= quantity
-                # remove the fish_token from the backpack_slots
-                for item in self.backpack:
-                    if item.type == fish_type:
-                        self.backpack.remove(item)
-                        break
+            for _ in range(quantity):
+                self.backpack.remove(("fish", fish_type))
+                break
 
     def break_ice(self, hexagon_with_ice: Hexagon):
         """
@@ -117,6 +109,11 @@ class Penguin:
             penguin (Penguin): The penguin to move.
             new_position (Tuple[int, int, int]): The new position to move the penguin to.
         """
+        if self.movement_tokens <= 0:
+            printc(
+                f"Penguin {self.id} does not have enough movement tokens.", MColors.FAIL
+            )
+            return
         self.position = new_position
         self.movement_tokens -= 1
         printc(
@@ -170,7 +167,7 @@ class Card:
         )
         self.passive_effect = passive_effect
         self.on_play_effect = on_play_effects
-    
+
     def __repr__(self) -> str:
         return f"{self.short_name} Cost: {self.cost}"
 
@@ -378,12 +375,6 @@ class Player:
     def get_card(self, card_short_name: str) -> bool:
         """
         Retrieves the card of the given player.
-
-        Parameters:
-        card_short_name (str): The short name of the card to retrieve.
-
-        Returns:
-        Card or None: The card with the given short name, or None if not found.
         """
         # Check if the player has the card
         for card in self.cards:
@@ -394,37 +385,45 @@ class Player:
     def play_card(self, penguin: Penguin, card_short_name: str):
         """
         Plays a card from the given player's hand.
-
-        Parameters:
-        player (Player): The player who is playing the card.
-        card (Card): The card to be played.
-
-        Returns:
-        None
         """
         # Check if the player has the card
         card: Card = self.get_card(card_short_name)
 
-        if card is not None:
-            # Remove the card from the player's hand
-            self.cards.remove(card)
+        if card is None:
+            printc(f"Player {self.player_id} does not have the card {card_short_name}.")
 
-            # Add the card to the penguin's cards
-            penguin.cards.append(card)
+        # Check if the card has an effect
+        if "ice_token" in card.on_play_effect:
+            penguin.ice_tokens += card.on_play_effect["ice_token"]
+            penguin.backpack.append(("ice", "ice"))
+        if "movement_token" in card.on_play_effect:
+            if (
+                penguin.movement_tokens <= 0
+                and card.on_play_effect["movement_token"] < 0
+            ):
+                printc(
+                    f"Penguin {penguin.id} does not have enough movement tokens to play card: {card_short_name}.",
+                    MColors.FAIL,
+                )
+                return
+            penguin.movement_tokens += card.on_play_effect["movement_token"]
+        if "fishing_token" in card.on_play_effect:
+            penguin.fishing_tokens += card.on_play_effect["fishing_token"]
+        if "fish_token" in card.on_play_effect:
+            penguin.backpack.append(("fish", "A"))
+        if "backpack" in card.on_play_effect:
+            penguin.max_backpack_slots += card.on_play_effect["backpack"]
 
-            # Check if the card has an effect
-            if "ice_token" in card.on_play_effect:
-                penguin.ice_tokens += card.on_play_effect["ice_token"]
-                penguin.backpack.append(("ice", "ice"))
-            if "movement_token" in card.on_play_effect:
-                penguin.movement_tokens += card.on_play_effect["movement_token"]
-            if "fishing_token" in card.on_play_effect:
-                penguin.fishing_tokens += card.on_play_effect["fishing_token"]
-            if "fish_token" in card.on_play_effect:
-                penguin.fish_tokens.append(("A", card.on_play_effect["fish_token"]))
-                penguin.backpack.append(("fish", "A"))
-            if "backpack" in card.on_play_effect:
-                penguin.max_backpack_slots += card.on_play_effect["backpack"]
+        # Remove the card from the player's hand
+        self.cards.remove(card)
+
+        # Add the card to the penguin's cards
+        penguin.cards.append(card)
+
+        printc(
+            f"{emojis['card']}Card {card_short_name} played to Penguin {penguin.id}.",
+            MColors.OKGREEN,
+        )
 
     def all_penguins_terminated(self):
         """
@@ -466,13 +465,13 @@ class ActionType(Enum):
 
     START = "start"
     MOVE = "move"
+    MOVE_OUT = "move_out"
     DROP_ICE = "drop_ice"
     BUY_CARD = "buy_card"
     PLAY_CARD = "play_card"
     BREAK_ICE = "break_ice"
     FISHING = "fishing"
     TURN = "turn"
-    MOVE_OUT = "move_out"
 
 
 class Action:

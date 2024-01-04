@@ -25,12 +25,13 @@ logging.basicConfig(
 
 def printc(message: str, color: MColors = MColors.OKBLUE) -> None:
     print(f"\033{color.value[0]}{message}\033[0m")
-    if(color == MColors.FAIL):
+    if color == MColors.FAIL:
         logging.error(message)
-    elif(color == MColors.WARNING):
+    elif color == MColors.WARNING:
         logging.warning(message)
-        
-    else: logging.info(message)
+
+    else:
+        logging.info(message)
 
 
 emojis = {

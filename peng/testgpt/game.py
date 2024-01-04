@@ -58,19 +58,33 @@ def initialize_board() -> List[Hexagon]:
 
     # Coordinates for the center hexagon
     fish_tile = get_fish_tile()
-    center_hexagon = Hexagon(q=0, r=0, s=0, fish_quantity=fish_tile["quantity"], fish_type=fish_tile["type"])
+    center_hexagon = Hexagon(
+        q=0, r=0, s=0, fish_quantity=fish_tile["quantity"], fish_type=fish_tile["type"]
+    )
     board.append(center_hexagon)
 
     for coordinates in outer_hexagons_coordinates:
         q, r, s = coordinates
         fish_tile = get_fish_tile()
-        hexagon = Hexagon(q=q, r=r, s=s, fish_quantity=fish_tile["quantity"], fish_type=fish_tile["type"])
+        hexagon = Hexagon(
+            q=q,
+            r=r,
+            s=s,
+            fish_quantity=fish_tile["quantity"],
+            fish_type=fish_tile["type"],
+        )
         board.append(hexagon)
 
     for coordinates in second_outer_hexagons_coordinates:
         q, r, s = coordinates
         fish_tile = get_fish_tile()
-        hexagon = Hexagon(q=q, r=r, s=s, fish_quantity=fish_tile["quantity"], fish_type=fish_tile["type"])
+        hexagon = Hexagon(
+            q=q,
+            r=r,
+            s=s,
+            fish_quantity=fish_tile["quantity"],
+            fish_type=fish_tile["type"],
+        )
         board.append(hexagon)
 
     return board
@@ -208,7 +222,7 @@ class FishyPenguinsGame:
         """
         current_player = self.players[self.current_player_index]
         printc(
-            f"Player {current_player.player_id}'s turn for penguin at {penguin.position}",
+            f"Player {current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
             MColors.OKGREEN,
         )
 
@@ -237,6 +251,12 @@ class FishyPenguinsGame:
             elif action.type == "move":
                 self.handle_move_penguin(penguin, action.parameter)
             elif action.type == "move_out":
+                if penguin.movement_tokens <= 0:
+                    printc(
+                        f"Penguin {penguin.id} does not have enough movement tokens to move out.",
+                        MColors.FAIL,
+                    )
+                    return
                 penguin.position = None
                 penguin.direction = None
                 penguin.movement_tokens -= 1
@@ -256,10 +276,6 @@ class FishyPenguinsGame:
                 self.fish(penguin)
             elif action.type == "play_card":
                 current_player.play_card(penguin, action.parameter)
-                printc(
-                    f"{emojis['card']}Card {action.parameter} played by Penguin {penguin.id}.",
-                    MColors.OKGREEN,
-                )
             elif action.type == "drop_ice":
                 self.drop_ice(penguin, action.parameter)
             else:
@@ -273,7 +289,6 @@ class FishyPenguinsGame:
             penguin (Penguin): The penguin to move.
             hexagons_to_move (int): The number of hexagons to move the penguin.
         """
-        
 
         if penguin.movement_tokens >= hexagons_to_move:
             direction = penguin.direction
@@ -284,14 +299,13 @@ class FishyPenguinsGame:
                 MColors.OKGREEN,
             )
             for _ in range(hexagons_to_move):
-                
                 if penguin.direction is None:
                     printc(f"Penguin {penguin.id} has no direction.", MColors.WARNING)
                     return
                 if penguin.position is None:
                     printc(f"Penguin {penguin.id} has no position.", MColors.WARNING)
                     return
-                
+
                 new_position = calculate_new_position(penguin.position, direction, 1)
 
                 # Check for collisions with other penguins
@@ -304,7 +318,10 @@ class FishyPenguinsGame:
                     penguin.move_penguin(new_position)
 
         else:
-            printc(f"Not enough movement tokens left for penguin {penguin.id}.", MColors.WARNING)
+            printc(
+                f"Not enough movement tokens left for penguin {penguin.id}.",
+                MColors.WARNING,
+            )
 
     def find_direction_to_push(
         self,
@@ -340,14 +357,19 @@ class FishyPenguinsGame:
 
         current_index = direction_order.index(direction)
         for direction_option in direction_order[current_index:]:
-            new_position = calculate_new_position(current_coordinates, direction_option, 1)
+            new_position = calculate_new_position(
+                current_coordinates, direction_option, 1
+            )
             is_hexagon_empty = hexagon_empty(self.board, self.players, new_position)
             is_outside_hexagon = outside_hexagon(new_position)
             if is_hexagon_empty or is_outside_hexagon:
-                if(direction_option != direction):
+                if direction_option != direction:
                     return direction_option
 
-        printc(f"No direction found. {current_coordinates} direction: {direction}", MColors.WARNING)
+        printc(
+            f"No direction found. {current_coordinates} direction: {direction}",
+            MColors.WARNING,
+        )
         return None
 
     def handle_collision(self, moving_penguin: Penguin, collided_penguin: Penguin):
@@ -436,7 +458,7 @@ class FishyPenguinsGame:
             # Add the collected fish to the penguin's backpack
             # Assuming the backpack is a list, you might need to adapt based on your implementation
             for _ in range(hexagon.fish_quantity):
-                penguin.backpack.append(hexagon.fish_type)
+                penguin.backpack.append(("fish", hexagon.fish_type))
 
             # Update the fishing tokens of the penguin
             penguin.fishing_tokens -= 1
@@ -446,7 +468,10 @@ class FishyPenguinsGame:
                 MColors.OKGREEN,
             )
         else:
-            printc("Penguin has no postion or hexagon no found", MColors.WARNING)
+            printc(
+                f"Penguin {penguin.id} has no postion or hexagon no found",
+                MColors.WARNING,
+            )
 
     def buy_card(self, player: Player, penguin: Penguin, card_index: int):
         """
@@ -460,30 +485,34 @@ class FishyPenguinsGame:
             selected_card = self.card_market[card_index]
 
             # Check if the player has enough tokens to buy the card
-            if has_enough_tokens(penguin, selected_card.cost):
-                # Deduct the cost tokens from the player's penguin
-                penguin.deduct_cost_tokens(selected_card.cost)
-
-                # Give the card to the player
-                player.cards.append(selected_card)
-
-                # Remove the card from the market
-                self.card_market.pop(card_index)
-
-                # Add another random card to the market
-                all_cards = get_all_cards()
-                new_card = random.choice(all_cards)
-                self.card_market.append(new_card)
-
+            if not has_enough_tokens(penguin, selected_card.cost):
                 printc(
-                    f"{emojis['plus']}{emojis['card']}Card {selected_card.short_name} bought by Penguin {penguin.id}.",
-                    MColors.YELLOW,
+                    f"Player {player.player_id} does not have enough tokens to buy card {selected_card.short_name}.",
+                    MColors.FAIL,
                 )
+
+            # Deduct the cost tokens from the player's penguin
+            penguin.deduct_cost_tokens(selected_card.cost)
+
+            # Give the card to the player
+            player.cards.append(selected_card)
+
+            # Remove the card from the market
+            self.card_market.pop(card_index)
+
+            # Add another random card to the market
+            all_cards = get_all_cards()
+            new_card = random.choice(all_cards)
+            self.card_market.append(new_card)
+
+            printc(
+                f"{emojis['plus']}{emojis['card']}Card {selected_card.short_name} bought by Penguin {penguin.id}.",
+                MColors.YELLOW,
+            )
 
     def drop_ice(self, penguin: Penguin, coordinates: Tuple[int, int, int]):
         """
-        Drops ice at the given position.
-
+        Drops ice at the given coordinate.
         """
         # Check if the penguin has an ice block in its backpack
         if ("ice", None) in penguin.backpack:
