@@ -1,6 +1,10 @@
 from typing import Dict, List, Tuple, Union
 
-from classes import Hexagon, Penguin, Player
+from classes.penguin import Penguin
+from classes.hexagon import Hexagon
+from classes.player import Player
+from classes.backpack_item import BackpackItem, Fish, Ice
+from classes.card import CardPassiveTrigger, CardReward
 from constants import get_start_point_direction_possible_coordinates
 from printc import MColors, printc, emojis
 
@@ -257,16 +261,14 @@ def get_available_adjacent_hexagons(
     return adjacent_hexagons
 
 
-def has_enough_tokens(penguin: Penguin, cost: List[Tuple[str, int]]) -> bool:
+def has_enough_tokens(penguin: Penguin, cost: List[BackpackItem]) -> bool:
     # Check if the player has enough tokens to buy the card
-    current_in_slots: Dict[str, int] = {}
+    current_in_slots: Dict[BackpackItem, int] = {}
     for item in penguin.backpack:
-        item_class, item_type = item
-        if item_class == "fish":
-            current_in_slots[item_type] = current_in_slots.get(item_type, 0) + 1
-
-    for fish_type, quantity in cost:
-        if current_in_slots.get(fish_type, 0) < quantity:
+        item_key = item.__repr__()
+        current_in_slots[item_key] = current_in_slots.get(item_key, 0) + 1
+    for item, quantity in cost:
+        if current_in_slots.get(item.__repr__(), 0) < quantity:
             return False
     return True
 
@@ -279,3 +281,40 @@ def get_hexagon(board: List[Hexagon], coordinates: Tuple[int, int, int]):
         if hexagon.get_coordinates() == coordinates:
             return hexagon
     return None
+
+
+def apply_card_passive_effects(
+    penguin: Penguin, trigger: CardPassiveTrigger, board: List[Hexagon]
+):
+    """
+    Applies the passive effects of a card to a penguin.
+    """
+    for card in penguin.cards:
+        effect = card.passive_effect
+        if trigger in effect:
+            if CardReward.FISH in effect[trigger]:
+                fish_type = get_hexagon(board, penguin.position).fish_type
+                penguin.add_in_backpack(Fish(fish_type))
+            elif CardReward.ICE in effect[trigger]:
+                penguin.add_in_backpack(Ice())
+            elif CardReward.MOVEMENT in effect[trigger]:
+                penguin.movement_tokens += effect[trigger][CardReward.MOVEMENT]
+            elif CardReward.FISHING in effect[trigger]:
+                penguin.fishing_tokens += effect[trigger][CardReward.FISHING]
+
+def break_ice(penguin: Penguin, hexagon_with_ice: Hexagon, board: List[Hexagon]):
+        """
+        Breaks the ice at the given position.
+
+        Parameters:
+        position (tuple): The position of the ice to break, represented as a tuple of coordinates.
+
+        Returns:
+        None
+        """
+        if hexagon_with_ice and hexagon_with_ice.has_ice_block:
+            penguin.ice_tokens += 1
+            hexagon_with_ice.has_ice_block = False
+            apply_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE,board)
+        else:
+            print("Hexagon does not have an ice block.")

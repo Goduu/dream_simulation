@@ -1,11 +1,11 @@
 from utils import calculate_new_position, printc
-from game import FishyPenguinsGame
+from game import SlideGame
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import numpy as np
 
 
-def visualize_board(game: FishyPenguinsGame):
+def visualize_board(game: SlideGame):
     fig, ax = plt.subplots()
 
     hex_size = 0.5  # Adjust the hexagon size

@@ -1,5 +1,11 @@
 from typing import List, Tuple
-from classes import Card, Hexagon, Player, Penguin, Action
+from classes.card import Card
+from classes.card import CardReward
+from classes.penguin import Penguin
+from classes.hexagon import Hexagon
+from classes.player import Player
+from classes.action import Action
+
 from constants import get_second_outer_hexagons_coordinates
 from printc import MColors, printc
 from utils import (
@@ -148,7 +154,7 @@ def check_penguin_can_use_card(
     for effect_key in effects:
         effect_value = effects[effect_key]
         if effect_value < 0:
-            if effect_key == "movement_token":
+            if effect_key == CardReward.MOVEMENT:
                 movement_actions = [
                     action
                     for action in possible_actions
@@ -166,10 +172,10 @@ def check_penguin_can_use_card(
                     < abs(effect_value) + movement_actions.__len__() + move_tokens
                 ):
                     return False
-            elif effect_key == "fishing_token":
+            elif effect_key == CardReward.FISHING:
                 if penguin.fishing_tokens < abs(effect_value):
                     return False
-            elif effect_key == "ice_token":
+            elif effect_key == CardReward.ICE:
                 if penguin.ice_tokens < abs(effect_value):
                     return False
             else:
@@ -190,6 +196,11 @@ def add_play_card_actions(
                 play_card_actions.append(actions_copy)
 
     possible_actions.extend(play_card_actions)
+
+
+def add_fishing_actions(possible_actions: List[List[Action]]):
+    for actions in possible_actions:
+        actions.append(Action("fishing", ""))
 
 
 def get_possible_actions(
@@ -237,7 +248,6 @@ def get_possible_actions(
         add_play_card_actions(player, penguin, possible_actions)
     # Check if the penguin can fish
     if penguin.fishing_tokens > 0:
-        for actions in possible_actions:
-            actions.append(Action("fishing", ""))
+        add_fishing_actions(possible_actions)
 
     return possible_actions

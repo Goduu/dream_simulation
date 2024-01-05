@@ -1,6 +1,8 @@
 # Coordinates for the outer hexagons
 import random
 
+from classes.backpack_item import FishType
+
 
 outer_hexagons_coordinates = [
     (1, -1, 0),
@@ -45,15 +47,15 @@ def get_second_outer_hexagons_coordinates():
 
 
 fish_tiles = [
-    {"type": "A", "quantity": 1, "probability": 1},
-    {"type": "A", "quantity": 2, "probability": 2},
-    {"type": "A", "quantity": 3, "probability": 1},
-    {"type": "B", "quantity": 1, "probability": 1},
-    {"type": "B", "quantity": 2, "probability": 2},
-    {"type": "B", "quantity": 3, "probability": 1},
-    {"type": "C", "quantity": 1, "probability": 1},
-    {"type": "C", "quantity": 2, "probability": 2},
-    {"type": "C", "quantity": 3, "probability": 1},
+    {"type": FishType.A, "quantity": 1, "probability": 1},
+    {"type": FishType.A, "quantity": 2, "probability": 2},
+    {"type": FishType.A, "quantity": 3, "probability": 1},
+    {"type": FishType.B, "quantity": 1, "probability": 1},
+    {"type": FishType.B, "quantity": 2, "probability": 2},
+    {"type": FishType.B, "quantity": 3, "probability": 1},
+    {"type": FishType.C, "quantity": 1, "probability": 1},
+    {"type": FishType.C, "quantity": 2, "probability": 2},
+    {"type": FishType.C, "quantity": 3, "probability": 1},
 ]
 
 

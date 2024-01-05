@@ -8,20 +8,27 @@ It also imports necessary classes and constants from other modules.
 """
 
 import random
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-from classes import Card, Hexagon, Player, Penguin, get_all_cards
+from classes.card import Card
+from classes.backpack_item import Fish, Ice
+from classes.card import CardPassiveTrigger, CardReward
+from classes.penguin import Penguin
+from classes.hexagon import Hexagon
+from classes.player import Player
+
 from constants import (
     get_fish_tile,
     outer_hexagons_coordinates,
     second_outer_hexagons_coordinates,
 )
+from all_cards import get_all_cards
 from get_possible_actions import get_possible_actions
 from printc import printc, MColors, emojis
 from utils import (
+    break_ice,
     calculate_new_position,
     check_for_collision,
-    get_available_adjacent_hexagons,
     get_hexagon,
     has_enough_tokens,
     hexagon_empty,
@@ -30,20 +37,19 @@ from utils import (
 )
 
 
-def initialize_card_market() -> List[Card]:
+def initialize_card_market(cards: List[Card]) -> List[Card]:
     """
     Initializes the card market.
-
-    This function is responsible for setting up the card market at the start of the game.
-    It should create a list of Card objects that players can buy during the game.
-
-    Returns:
-    List[Card]: The list of cards in the market.
     """
-    all_cards = get_all_cards()
 
     # Select six random cards for the card market
-    card_market = random.sample(all_cards, 6)
+    card_market = random.sample(cards, 6)
+
+    # remove one from cards quantity
+    for card in card_market:
+        card.quantity -= 1
+
+    printc(f"Cards: {[card.quantity for card in cards]}", MColors.OKCYAN)
 
     return card_market
 
@@ -90,7 +96,7 @@ def initialize_board() -> List[Hexagon]:
     return board
 
 
-class FishyPenguinsGame:
+class SlideGame:
     """
     Represents a game of Fishy Penguins.
 
@@ -113,6 +119,7 @@ class FishyPenguinsGame:
         Args:
             num_players (int): The number of players in the game.
         """
+        all_cards = get_all_cards()
         self.players: List[Player] = [
             Player(player_id) for player_id in range(num_players)
         ]
@@ -122,7 +129,8 @@ class FishyPenguinsGame:
         self.board: List[
             Hexagon
         ] = initialize_board()  # Function to create and return the hexagonal board
-        self.card_market: List[Card] = initialize_card_market()
+        self.card_market: List[Card] = initialize_card_market(all_cards)
+        self.all_cards = all_cards
         self.round = 0
         self.max_seasons = 3
         # Other attributes and initialization as needed
@@ -222,7 +230,7 @@ class FishyPenguinsGame:
         """
         current_player = self.players[self.current_player_index]
         printc(
-            f"Player {current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
+            f"{emojis['new']}Player {current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
             MColors.OKGREEN,
         )
 
@@ -265,7 +273,7 @@ class FishyPenguinsGame:
                     MColors.OKGREEN,
                 )
             elif action.type == "break_ice":
-                penguin.break_ice(action.parameter)
+                break_ice(penguin, action.parameter, self.board)
                 printc(
                     f"Penguin {penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
                     MColors.OKGREEN,
@@ -295,7 +303,7 @@ class FishyPenguinsGame:
 
             # Implement logic to update the penguin's position based on the chosen direction and hexagons to move
             printc(
-                f"{emojis['move']}Penguin {penguin.id} moves {hexagons_to_move} hexagons in direction {direction}",
+                f"{emojis['move']}Moving penguin {penguin.id} {hexagons_to_move} hexagons in direction {direction}",
                 MColors.OKGREEN,
             )
             for _ in range(hexagons_to_move):
@@ -395,7 +403,7 @@ class FishyPenguinsGame:
                 collided_penguin.position, collided_penguin.direction, moving_penguin
             )
             printc(
-                f"Moving penguin {moving_penguin.id} wins the collision.",
+                f"{emojis['win']}Moving penguin {moving_penguin.id} wins the collision.",
                 MColors.OKGREEN,
             )
             new_position = calculate_new_position(
@@ -412,7 +420,7 @@ class FishyPenguinsGame:
                 moving_penguin.position, moving_penguin.direction, collided_penguin
             )
             printc(
-                f"Collided penguin {collided_penguin.id} wins the collision.",
+                f"{emojis['win']}Collided penguin {collided_penguin.id} wins the collision.",
                 MColors.OKGREEN,
             )
             new_position = calculate_new_position(
@@ -458,7 +466,13 @@ class FishyPenguinsGame:
             # Add the collected fish to the penguin's backpack
             # Assuming the backpack is a list, you might need to adapt based on your implementation
             for _ in range(hexagon.fish_quantity):
-                penguin.backpack.append(("fish", hexagon.fish_type))
+                if len(penguin.backpack) <= penguin.max_backpack_slots:
+                    penguin.add_in_backpack(Fish(hexagon.fish_type))
+                else:
+                    printc(
+                        f"Penguin {penguin.id} has no space in its backpack.",
+                        MColors.FAIL,
+                    )
 
             # Update the fishing tokens of the penguin
             penguin.fishing_tokens -= 1
@@ -469,7 +483,7 @@ class FishyPenguinsGame:
             )
         else:
             printc(
-                f"Penguin {penguin.id} has no postion or hexagon no found",
+                f"Penguin {penguin.id} has no postion or hexagon no found {penguin.position} {hexagon}",
                 MColors.WARNING,
             )
 
@@ -500,29 +514,38 @@ class FishyPenguinsGame:
             # Remove the card from the market
             self.card_market.pop(card_index)
 
-            # Add another random card to the market
-            all_cards = get_all_cards()
-            new_card = random.choice(all_cards)
-            self.card_market.append(new_card)
-
             printc(
                 f"{emojis['plus']}{emojis['card']}Card {selected_card.short_name} bought by Penguin {penguin.id}.",
                 MColors.YELLOW,
             )
+
+            # Add another random card to the market which still has at least one card left
+            # filter all cards which has quantity > 0
+            cards_left = list(filter(lambda card: card.quantity > 0, self.all_cards))
+            if cards_left:
+                new_card = random.choice(cards_left)
+                printc(
+                    f"{emojis['plus']}Cards {new_card.short_name} added to market.",
+                    MColors.OKCYAN,
+                )
+                new_card.quantity -= 1
+                self.card_market.append(new_card)
+            else:
+                printc("No cards left", MColors.WARNING)
 
     def drop_ice(self, penguin: Penguin, coordinates: Tuple[int, int, int]):
         """
         Drops ice at the given coordinate.
         """
         # Check if the penguin has an ice block in its backpack
-        if ("ice", None) in penguin.backpack:
+        if Ice() in penguin.backpack:
             if hexagon_empty(self.board, self.players, coordinates):
                 # Drop the ice block in the hexagon
                 hexagon = get_hexagon(self.board, coordinates)
                 hexagon.has_ice_block = True
 
                 # Remove the ice block from the penguin's backpack
-                penguin.backpack.remove(("ice", None))
+                penguin.remove_from_backpack(Ice())
                 penguin.ice_tokens -= 1
 
                 printc(
