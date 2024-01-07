@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 from classes.backpack_item import BackpackItem, Ice
 from classes.card import Card, CardPassiveTrigger
-from classes.hexagon import Hexagon
+from constants import Dir
 
 from printc import MColors, printc, emojis
 
@@ -31,7 +31,7 @@ class Penguin:
         ]  # List of tuples representing item type and fish type
         self.max_backpack_slots: int = penguin_type["slots"]
         self.direction: Optional[
-            str
+            Dir
         ] = None  # Direction in which the penguin is moving (q,r,s,cq,cr,cs)
         self.position: Optional[Tuple[int, int, int]] = None  # Hexagon coordinates
         self.cards: List[Card] = []  # List to store penguin's cards
@@ -77,12 +77,12 @@ class Penguin:
         str: The reversed direction.
         """
         direction_map = {
-            "r": "cr",
-            "cr": "r",
-            "s": "cs",
-            "cs": "s",
-            "q": "cq",
-            "cq": "q",
+            Dir.R: Dir.CR,
+            Dir.CR: Dir.R,
+            Dir.S: Dir.CS,
+            Dir.CS: Dir.S,
+            Dir.Q: Dir.CQ,
+            Dir.CQ: Dir.Q,
         }
         self.direction = direction_map.get(self.direction, self.direction)
 
@@ -106,7 +106,7 @@ class Penguin:
             MColors.OKGREEN,
         )
 
-    def move_to_start_point(self, position, direction):
+    def move_to_start_point(self, position, direction: Dir):
         """
         Moves a penguin to the start point.
 

@@ -19,10 +19,14 @@ from classes.player import Player
 
 from constants import (
     get_fish_tile,
+    get_market_size,
     outer_hexagons_coordinates,
     second_outer_hexagons_coordinates,
+    Dir,
 )
 from all_cards import get_all_cards
+from classes.action import Action
+from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
 from printc import printc, MColors, emojis
 from utils import (
@@ -43,7 +47,8 @@ def initialize_card_market(cards: List[Card]) -> List[Card]:
     """
 
     # Select six random cards for the card market
-    card_market = random.sample(cards, 6)
+    market_size = get_market_size()
+    card_market = random.sample(cards, market_size)
 
     # remove one from cards quantity
     for card in card_market:
@@ -186,6 +191,20 @@ class SlideGame:
             player.terminated = True
             printc(f"Player {player.player_id} terminated", MColors.YELLOW)
 
+    def take_action(self, player: Player, penguin: Penguin, actions, max_actions):
+        current_player = self.players[self.current_player_index]
+        # create a for to iterate over actions and current_player.penguins at the same time
+        actions_per_penguin = [
+            actions[i : i + max_actions] for i in range(0, len(actions), max_actions)
+        ]
+        for penguin_index, actions in enumerate(actions_per_penguin):
+            penguin = current_player.penguins[penguin_index]
+            for action in actions:
+                action = get_action_by_index(action)
+                self.handle_action(current_player, penguin, action)
+
+        self.move_to_next_player()
+
     def play_turn(self):
         """
         Plays a turn in the game.
@@ -211,7 +230,7 @@ class SlideGame:
 
         for penguin in current_player.penguins:
             if not penguin.terminated:
-                self.handle_penguin_actions(current_player, penguin)
+                self.chose_penguin_actions(current_player, penguin)
 
         # Implement logic for passing to the next season, checking for game end conditions, etc.
         # You can add more game-related logic here
@@ -220,7 +239,7 @@ class SlideGame:
         self.move_to_next_player()
         return False
 
-    def handle_penguin_actions(self, player: Player, penguin: Penguin):
+    def chose_penguin_actions(self, player: Player, penguin: Penguin):
         """
         Handles the actions for a penguin in the game.
 
@@ -247,47 +266,58 @@ class SlideGame:
             return
         actions = random.choice(possible_actions)
         for action in actions:
-            if action.type == "start":
-                position, direction = action.parameter
-                penguin.move_to_start_point(position, direction)
-            elif action.type == "turn":
-                penguin.direction = action.parameter
+            self.handle_action(current_player, penguin, action)
+
+    def handle_action(self, player: Player, penguin: Penguin, action: Action):
+        """
+        Handles an action for a penguin in the game.
+
+        Args:
+            player (Player): The player who owns the penguin.
+            penguin (Penguin): The penguin to handle actions for.
+            action (Action): The action to handle.
+        """
+        if action.type == "start":
+            position, direction = action.parameter
+            penguin.move_to_start_point(position, direction)
+        elif action.type == "turn":
+            penguin.direction = action.parameter
+            printc(
+                f"{emojis['turn']}Penguin {penguin.id} turns to direction {penguin.direction}",
+                MColors.OKGREEN,
+            )
+        elif action.type == "move":
+            self.handle_move_penguin(penguin, action.parameter)
+        elif action.type == "move_out":
+            if penguin.movement_tokens <= 0:
                 printc(
-                    f"{emojis['turn']}Penguin {penguin.id} turns to direction {penguin.direction}",
-                    MColors.OKGREEN,
+                    f"Penguin {penguin.id} does not have enough movement tokens to move out.",
+                    MColors.FAIL,
                 )
-            elif action.type == "move":
-                self.handle_move_penguin(penguin, action.parameter)
-            elif action.type == "move_out":
-                if penguin.movement_tokens <= 0:
-                    printc(
-                        f"Penguin {penguin.id} does not have enough movement tokens to move out.",
-                        MColors.FAIL,
-                    )
-                    return
-                penguin.position = None
-                penguin.direction = None
-                penguin.movement_tokens -= 1
-                printc(
-                    f"Penguin {penguin.id} moved out of the board.",
-                    MColors.OKGREEN,
-                )
-            elif action.type == "break_ice":
-                break_ice(penguin, action.parameter, self.board)
-                printc(
-                    f"Penguin {penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
-                    MColors.OKGREEN,
-                )
-            elif action.type == "buy_card":
-                self.buy_card(current_player, penguin, action.parameter)
-            elif action.type == "fishing":
-                self.fish(penguin)
-            elif action.type == "play_card":
-                current_player.play_card(penguin, action.parameter)
-            elif action.type == "drop_ice":
-                self.drop_ice(penguin, action.parameter)
-            else:
-                printc(f"Unimplemented action: {action.type}", MColors.FAIL)
+                return
+            penguin.position = None
+            penguin.direction = None
+            penguin.movement_tokens -= 1
+            printc(
+                f"Penguin {penguin.id} moved out of the board.",
+                MColors.OKGREEN,
+            )
+        elif action.type == "break_ice":
+            break_ice(penguin, action.parameter, self.board)
+            printc(
+                f"Penguin {penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
+                MColors.OKGREEN,
+            )
+        elif action.type == "buy_card":
+            self.buy_card(player, penguin, action.parameter)
+        elif action.type == "fishing":
+            self.fish(penguin)
+        elif action.type == "play_card":
+            player.play_card(penguin, action.parameter)
+        elif action.type == "drop_ice":
+            self.drop_ice(penguin, action.parameter)
+        else:
+            printc(f"Unimplemented action: {action.type}", MColors.FAIL)
 
     def handle_move_penguin(self, penguin: Penguin, hexagons_to_move: int):
         """
@@ -334,7 +364,7 @@ class SlideGame:
     def find_direction_to_push(
         self,
         current_coordinates: Tuple[int, int, int],
-        direction: str,
+        direction: Dir,
         other_penguin: Penguin = None,
     ):
         """
@@ -345,18 +375,18 @@ class SlideGame:
         """
         # Define the order of directions
         direction_order = [
-            "q",
-            "cs",
-            "r",
-            "cq",
-            "s",
-            "cr",
-            "q",
-            "cs",
-            "r",
-            "cq",
-            "s",
-            "cr",
+            Dir.Q,
+            Dir.CS,
+            Dir.R,
+            Dir.CQ,
+            Dir.S,
+            Dir.CR,
+            Dir.Q,
+            Dir.CS,
+            Dir.R,
+            Dir.CQ,
+            Dir.S,
+            Dir.CR,
         ]
 
         # Find the index of the current direction in the order

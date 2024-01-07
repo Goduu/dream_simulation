@@ -6,7 +6,7 @@ from classes.hexagon import Hexagon
 from classes.player import Player
 from classes.action import Action
 
-from constants import get_second_outer_hexagons_coordinates
+from constants import Dir, get_second_outer_hexagons_coordinates
 from printc import MColors, printc
 from utils import (
     calculate_direction,
@@ -66,7 +66,7 @@ def add_actions_after_passing_season(
 
 def all_hexagons_available_to_move(
     position: Tuple[int, int, int],
-    direction: str,
+    direction: Dir,
     board: List[Hexagon],
     players: List[Player],
     hexagons_to_move: int,
@@ -200,7 +200,7 @@ def add_play_card_actions(
 
 def add_fishing_actions(possible_actions: List[List[Action]]):
     for actions in possible_actions:
-        actions.append(Action("fishing", ""))
+        actions.append(Action("fishing", None))
 
 
 def get_possible_actions(
@@ -235,7 +235,9 @@ def get_possible_actions(
         if adjacent_hexagons:
             for adj_hexagon in adjacent_hexagons:
                 if adj_hexagon.has_ice_block:
-                    possible_actions.append([Action("break_ice", adj_hexagon)])
+                    possible_actions.append(
+                        [Action("break_ice", adj_hexagon.get_coordinates())]
+                    )
 
     # Check if the penguin can buy cards
     if card_market:

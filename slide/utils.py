@@ -5,32 +5,32 @@ from classes.hexagon import Hexagon
 from classes.player import Player
 from classes.backpack_item import BackpackItem, Fish, Ice
 from classes.card import CardPassiveTrigger, CardReward
-from constants import get_start_point_direction_possible_coordinates
+from constants import Dir, get_start_point_direction_possible_coordinates
 from printc import MColors, printc, emojis
 
 
 def calculate_new_position(
-    current_position: Tuple[int, int, int], direction: str, hexagons_to_move: int
+    current_position: Tuple[int, int, int], direction: Dir, hexagons_to_move: int
 ) -> Tuple[int, int, int]:
     # Implement logic to calculate the new position based on the chosen direction and hexagons to move
     q, r, s = current_position
 
-    if direction == "q":
+    if direction == Dir.Q:
         r -= hexagons_to_move
         s += hexagons_to_move
-    elif direction == "r":
+    elif direction == Dir.R:
         q += hexagons_to_move
         s -= hexagons_to_move
-    elif direction == "s":
+    elif direction == Dir.S:
         q -= hexagons_to_move
         r += hexagons_to_move
-    elif direction == "cq":
+    elif direction == Dir.CQ:
         r += hexagons_to_move
         s -= hexagons_to_move
-    elif direction == "cr":
+    elif direction == Dir.CR:
         q -= hexagons_to_move
         s += hexagons_to_move
-    elif direction == "cs":
+    elif direction == Dir.CS:
         q += hexagons_to_move
         r -= hexagons_to_move
     else:
@@ -207,17 +207,17 @@ def calculate_direction(
         return None  # No movement
 
     elif dq == 1 and dr == -1 and ds == 0:
-        return "cs"  # Move in the q direction
+        return Dir.CS  # Move in the q direction
     elif dq == -1 and dr == 1 and ds == 0:
-        return "s"  # Move in the q direction
+        return Dir.S  # Move in the q direction
     elif dq == 0 and dr == 1 and ds == -1:
-        return "cq"  # Move in the q direction
+        return Dir.CQ  # Move in the q direction
     elif dq == 0 and dr == -1 and ds == 1:
-        return "q"  # Move in the q direction
+        return Dir.Q  # Move in the q direction
     elif dq == -1 and dr == 0 and ds == 1:
-        return "cr"  # Move in the q direction
+        return Dir.CR  # Move in the q direction
     elif dq == 1 and dr == 0 and ds == -1:
-        return "r"  # Move in the q direction
+        return Dir.R  # Move in the q direction
 
     return None  # Invalid movement
 
@@ -302,19 +302,21 @@ def apply_card_passive_effects(
             elif CardReward.FISHING in effect[trigger]:
                 penguin.fishing_tokens += effect[trigger][CardReward.FISHING]
 
-def break_ice(penguin: Penguin, hexagon_with_ice: Hexagon, board: List[Hexagon]):
-        """
-        Breaks the ice at the given position.
 
-        Parameters:
-        position (tuple): The position of the ice to break, represented as a tuple of coordinates.
+def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[Hexagon]):
+    """
+    Breaks the ice at the given position.
 
-        Returns:
-        None
-        """
-        if hexagon_with_ice and hexagon_with_ice.has_ice_block:
-            penguin.ice_tokens += 1
-            hexagon_with_ice.has_ice_block = False
-            apply_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE,board)
-        else:
-            print("Hexagon does not have an ice block.")
+    Parameters:
+    position (tuple): The position of the ice to break, represented as a tuple of coordinates.
+
+    Returns:
+    None
+    """
+    hexagon = get_hexagon(board, coordinate)
+    if hexagon and hexagon.has_ice_block:
+        penguin.ice_tokens += 1
+        hexagon.has_ice_block = False
+        apply_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE, board)
+    else:
+        print("Hexagon does not have an ice block.")

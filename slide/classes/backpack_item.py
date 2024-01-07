@@ -17,7 +17,7 @@ class Fish:
 
     def __repr__(self) -> str:
         return f"Fish {self.type.value}"
-    
+
     def __eq__(self, other):
         return self.type == other.type
 
@@ -33,7 +33,7 @@ class Ice:
 
     def __repr__(self) -> str:
         return f"Ice"
-    
+
     def __eq__(self, other):
         return self.type == other.type
 

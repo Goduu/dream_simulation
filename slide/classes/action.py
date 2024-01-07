@@ -38,3 +38,8 @@ class Action:
 
     def __repr__(self):
         return f"\nAction: {self.type}, Parameter: {self.parameter}"
+
+    def __eq__(self, other):
+        if isinstance(other, Action):
+            return self.type == other.type and self.parameter == other.parameter
+        return False

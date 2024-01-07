@@ -1,0 +1,17 @@
+import gymnasium
+from slidezoo import env
+
+from pettingzoo.test import parallel_api_test, api_test
+
+
+if __name__ == "__main__":
+    api_test(env(), num_cycles=1_000_000)
+    # check if which part of env().observation_space is not isinstance of gym.spaces.Space
+    # observation_space = env().observation_space("player_1")
+
+    # for part in observation_space:
+    #     if not isinstance(part, gymnasium.spaces.Space):
+    #         print(f"{part} is not an instance of gym.spaces.Space")
+
+    
+    

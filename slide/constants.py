@@ -1,4 +1,5 @@
 # Coordinates for the outer hexagons
+from enum import Enum
 import random
 
 from classes.backpack_item import FishType
@@ -42,6 +43,10 @@ def get_start_point_direction_possible_coordinates():
     return possible_coordinates
 
 
+def get_all_coordinates():
+    return outer_hexagons_coordinates + second_outer_hexagons_coordinates + [(0, 0, 0)]
+
+
 def get_second_outer_hexagons_coordinates():
     return second_outer_hexagons_coordinates
 
@@ -65,3 +70,19 @@ def get_fish_tile():
         fish_tiles, [fish_tile["probability"] for fish_tile in fish_tiles]
     )[0]
     return fish_tile
+
+
+class Dir(Enum):
+    Q = "q"
+    R = "r"
+    S = "s"
+    CQ = "cq"
+    CR = "cr"
+    CS = "cs"
+
+
+market_size = 6
+
+
+def get_market_size():
+    return market_size

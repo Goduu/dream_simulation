@@ -19,6 +19,7 @@ class Player:
     """
 
     def __init__(self, player_id: int):
+        self.id = "player_" + str(player_id)
         self.player_id: int = player_id
         self.color: str = None
         self.penguins: List[Penguin] = [
