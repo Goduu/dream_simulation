@@ -25,7 +25,7 @@ from constants import (
     Dir,
 )
 from all_cards import get_all_cards
-from classes.action import Action
+from classes.action import Action, ActionType
 from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
 from printc import printc, MColors, emojis
@@ -277,18 +277,18 @@ class SlideGame:
             penguin (Penguin): The penguin to handle actions for.
             action (Action): The action to handle.
         """
-        if action.type == "start":
+        if action.type == ActionType.START:
             position, direction = action.parameter
             penguin.move_to_start_point(position, direction)
-        elif action.type == "turn":
+        elif action.type == ActionType.TURN:
             penguin.direction = action.parameter
             printc(
                 f"{emojis['turn']}Penguin {penguin.id} turns to direction {penguin.direction}",
                 MColors.OKGREEN,
             )
-        elif action.type == "move":
+        elif action.type == ActionType.MOVE:
             self.handle_move_penguin(penguin, action.parameter)
-        elif action.type == "move_out":
+        elif action.type == ActionType.MOVE_OUT:
             if penguin.movement_tokens <= 0:
                 printc(
                     f"Penguin {penguin.id} does not have enough movement tokens to move out.",
@@ -302,20 +302,22 @@ class SlideGame:
                 f"Penguin {penguin.id} moved out of the board.",
                 MColors.OKGREEN,
             )
-        elif action.type == "break_ice":
+        elif action.type == ActionType.BREAK_ICE:
             break_ice(penguin, action.parameter, self.board)
             printc(
                 f"Penguin {penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
                 MColors.OKGREEN,
             )
-        elif action.type == "buy_card":
+        elif action.type == ActionType.BUY_CARD:
             self.buy_card(player, penguin, action.parameter)
-        elif action.type == "fishing":
+        elif action.type == ActionType.FISHING:
             self.fish(penguin)
-        elif action.type == "play_card":
+        elif action.type == ActionType.PLAY_CARD:
             player.play_card(penguin, action.parameter)
-        elif action.type == "drop_ice":
+        elif action.type == ActionType.DROP_ICE:
             self.drop_ice(penguin, action.parameter)
+        elif action.type == ActionType.PASS_SEASON:
+            self.pass_season(player)
         else:
             printc(f"Unimplemented action: {action.type}", MColors.FAIL)
 

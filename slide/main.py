@@ -20,7 +20,7 @@ from ui import visualize_board
 
 import slidezoo as sz
 
-env = sz.env(render_mode="human")
+env = sz.env()
 env.reset(seed=42)
 
 for agent in env.agent_iter():
@@ -31,6 +31,6 @@ for agent in env.agent_iter():
     else:
         # this is where you would insert your policy
         action = env.action_space(agent).sample()
-
+        printc('step finished not truncated', MColors.OKBLUE)
     env.step(action)
 env.close()

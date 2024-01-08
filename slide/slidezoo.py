@@ -1,13 +1,16 @@
 import functools
-from typing import List
+from typing import List, Tuple
 from all_cards import get_all_cards
 from classes.player import Player
 from classes.backpack_item import BackpackItem, FishType, Ice
 from classes.card import Card
 from constants import Dir
+from classes.penguin import Penguin
+from printc import MColors, printc
 from get_possible_actions import get_possible_actions
 from game import SlideGame
 from possible_actions_mapping import (
+    get_action_by_index,
     get_action_index_by_action,
     get_possible_actions_mapping,
 )
@@ -63,6 +66,7 @@ class raw_env(AECEnv):
         These attributes should not be changed after initialization.
         """
         self.n_players = 4
+        self.max_items = 10
         self.possible_agents = ["player_" + str(r) for r in range(self.n_players)]
         self.render_mode = render_mode
         self.game = SlideGame(self.n_players)
@@ -86,56 +90,52 @@ class raw_env(AECEnv):
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
         return Dict(
             {
-                "action_mask": MultiDiscrete(
-                    [len(self.possible_actions_mapping)]
-                    * self.penguin_per_player
+                "action_mask": Box(
+                    low=0,
+                    high=1,
+                    shape=(self.penguin_per_player *  self.max_actions, len(self.possible_actions_mapping)),
+                    dtype=np.int8,
                 ),
-                "observation": Dict({
-                "cards": MultiBinary(self.all_cards.__len__()),
-                "terminated": Discrete(2),
-                "season": Discrete(3),
-                "penguins": Dict(
+                "observation": Dict(
                     {
+                        "cards": MultiBinary(len(self.all_cards)),
+                        "terminated": Discrete(2),
+                        "season": Discrete(3),
                         "penguins": Dict(
                             {
-                                penguin_id: Dict(
+                                "penguins": Dict(
                                     {
-                                        "movement_tokens": Box(
-                                            low=0,
-                                            high=10,
-                                            shape=(1,),
-                                            dtype=np.int8,
-                                        ),
-                                        "fishing_tokens": Box(
-                                            low=0,
-                                            high=10,
-                                            shape=(1,),
-                                            dtype=np.int8,
-                                        ),
-                                        "direction": Discrete(6),
-                                        "position": Box(
-                                            low=-3,
-                                            high=3,
-                                            shape=(3,),
-                                            dtype=np.float32,
-                                        ),
-                                        "ice_tokens": Discrete(10),
-                                        "cards": MultiBinary(self.all_cards.__len__()),
-                                        "terminated": Discrete(2),
-                                        "backpack": Dict(
+                                        penguin_id: Dict(
                                             {
-                                                "ice": Discrete(10),
-                                                "fish": MultiDiscrete([3, 10]),
+                                                "movement_tokens": Discrete(self.max_items),
+                                                "fishing_tokens": Discrete(self.max_items),
+                                                "direction": Discrete(7),
+                                                "position": Box(
+                                                    low=-3,
+                                                    high=3,
+                                                    shape=(3,),
+                                                    dtype=np.float32,
+                                                ),
+                                                "ice_tokens": Discrete(self.max_items),
+                                                "cards": MultiBinary(
+                                                    len(self.all_cards)
+                                                ),
+                                                "terminated": Discrete(2),
+                                                "backpack": Dict(
+                                                    {
+                                                        "ice": Box(low=0, high=1, shape=(self.max_items,), dtype=np.int8),
+                                                        "fish": Box(low=0, high=4, shape=(self.max_items,), dtype=np.int8),
+                                                    }
+                                                ),
                                             }
-                                        ),
+                                        )
+                                        for penguin_id in range(3)
                                     }
                                 )
-                                for penguin_id in range(3)
                             }
-                        )
-                    }
+                        ),
+                    },
                 ),
-                })
             }
         )
 
@@ -143,11 +143,7 @@ class raw_env(AECEnv):
     # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return MultiDiscrete(
-            [self.max_actions  * len(self.possible_actions_mapping)]
-            * self.penguin_per_player 
-           
-        )
+        return MultiDiscrete([len(self.possible_actions_mapping)] * self.penguin_per_player * self.max_actions)
 
     def render(self):
         for player in self.game.players:
@@ -192,7 +188,9 @@ class raw_env(AECEnv):
         self.truncations = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
         self.state = {agent: None for agent in self.agents}
-        self.observations = {agent: self.build_state_for_agent(agent) for agent in self.agents}
+        self.observations = {
+            agent: self.build_state_for_agent(agent) for agent in self.agents
+        }
         self.num_moves = 0
         """
         Our agent_selector utility allows easy cyclic stepping through the agents list.
@@ -200,53 +198,69 @@ class raw_env(AECEnv):
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
 
-    def calculate_rewards(self):
-        rewards = []
+    def calculate_rewards(self, player):
 
-        for player in self.game.players:
-            player_cards_points = sum([card.points for card in player.cards])
-            player_penguin_cards_points = sum(
-                [card.points for penguin in player.penguins for card in penguin.cards]
-            )
+        player_cards_points = sum([card.points for card in player.cards])
+        player_penguin_cards_points = sum(
+            [card.points for penguin in player.penguins for card in penguin.cards]
+        )
 
-            rewards.append(player_cards_points + player_penguin_cards_points)
+        return player_cards_points + player_penguin_cards_points
 
-        return tuple(rewards)
 
     def get_penguin_backpack_encoding(self, penguin_backpack: List[BackpackItem]):
+        zeros = np.zeros((self.max_items,), dtype=np.int8)
+        ice = [1 if item == Ice() else 0 for item in penguin_backpack]
+        fish = [
+            1
+            if item.type == FishType.A
+            else 2
+            if item.type == FishType.B
+            else 3
+            if item.type == FishType.C
+            else 0
+            for item in penguin_backpack
+        ]
+
+        ice.extend(zeros[len(ice) :])
+        fish.extend(zeros[len(fish) :])
         backpack_encoding = {
-            "ice": [1 if item == Ice() else 0 for item in penguin_backpack],
-            "fish": [
-                1
-                if item.type == FishType.A
-                else 2
-                if item.type == FishType.B
-                else 3
-                if item.type == FishType.C
-                else 0
-                for item in penguin_backpack
-            ],
+            "ice": np.array(ice, dtype=np.int8),
+            "fish": np.array(fish, dtype=np.int8),
         }
         return backpack_encoding
 
     def get_penguin_direction_encoding(self, penguin_direction: Dir):
-        direction_encoding = [
-            1 if direction == penguin_direction else 0 for direction in Dir
-        ]
-        return direction_encoding
+        for index, d in enumerate(Dir):
+            if d == penguin_direction:
+                return index + 1
+        return 0
 
     def get_card_encoding(self, player_cards: List[Card]):
         card_encoding = [1 if card in player_cards else 0 for card in self.all_cards]
-        return np.array(card_encoding)
+        return np.array(card_encoding, dtype=np.int8)
 
-    def build_state_for_agent(self, agent: str):
-        player: Player = next((player for player in self.game.players if player.id == agent), None)
-        
+    def get_position_encoding(self, position: Tuple[int, int, int]):
+        if position is None:
+            return np.array([-3, -3, -3], dtype=np.float32)
+        return np.array(position, dtype=np.float32)
+
+    def build_state_for_agent(self, agent: str, all_action_masks: List[List[int]] = []):
+        player: Player = next(
+            (player for player in self.game.players if player.id == agent), None
+        )
+        if all_action_masks == []:
+            for penguin in player.penguins:
+                action_mask = self.get_action_mask(player, penguin)
+                for action_in_mask in action_mask:
+                    all_action_masks.append(action_in_mask)
+
+
         state = {
-            "action_mask": self.get_action_mask(player),
-            "observation":{
+            "action_mask": tuple(all_action_masks),
+            "observation": {
                 "cards": self.get_card_encoding(player.cards),
-                "terminated": player.terminated,
+                "terminated": 1 if player.terminated else 0,
                 "season": player.season,
                 "penguins": {
                     "penguins": {
@@ -256,10 +270,10 @@ class raw_env(AECEnv):
                             "direction": self.get_penguin_direction_encoding(
                                 penguin.direction
                             ),
-                            "position": penguin.position,
+                            "position": self.get_position_encoding(penguin.position),
                             "ice_tokens": penguin.ice_tokens,
                             "cards": self.get_card_encoding(penguin.cards),
-                            "terminated": penguin.terminated,
+                            "terminated": 1 if penguin.terminated else 0,
                             "backpack": self.get_penguin_backpack_encoding(
                                 penguin.backpack
                             ),
@@ -267,32 +281,57 @@ class raw_env(AECEnv):
                         for penguin_id, penguin in enumerate(player.penguins)
                     }
                 },
-                
             },
         }
 
         return state
 
-    def get_action_mask(self, player: Player):
-        action_mask_vector = []
+    def get_action_mask(self, player: Player, penguin: Penguin):
+        possible_actions = get_possible_actions(
+            player, penguin, self.game.board, self.game.card_market, self.game.players
+        )
 
-        for penguin in player.penguins:
-            possible_actions = get_possible_actions(
-                player, penguin, self.game.board, self.game.card_market, self.game.players
-            )
+        first_action_mask_vector = np.zeros(
+            len(self.possible_actions_mapping), dtype=np.int8
+        )
+        second_action_mask_vector = np.zeros(
+            len(self.possible_actions_mapping), dtype=np.int8
+        )
+        third_action_mask_vector = np.zeros(
+            len(self.possible_actions_mapping), dtype=np.int8
+        )
+        fourth_action_mask_vector = np.zeros(
+            len(self.possible_actions_mapping), dtype=np.int8
+        )
+        fifth_action_mask_vector = np.zeros(
+            len(self.possible_actions_mapping), dtype=np.int8
+        )
 
-            sub_mask = np.zeros(len(self.possible_actions_mapping) * self.max_actions, dtype=np.int8)
+        for actions in possible_actions:
+            for index, action in enumerate(actions):
+                action_index = get_action_index_by_action(action)
+                if index == 0:
+                    first_action_mask_vector[action_index] = 1
+                elif index == 1:
+                    second_action_mask_vector[action_index] = 1
+                elif index == 2:
+                    third_action_mask_vector[action_index] = 1
+                elif index == 3:
+                    fourth_action_mask_vector[action_index] = 1
+                elif index == 4:
+                    fifth_action_mask_vector[action_index] = 1
 
-            for actions in possible_actions:
-                for action in actions:
-                    action_index = get_action_index_by_action(action)
-                    sub_mask[action_index] = 1
+        return np.stack(
+            [
+                first_action_mask_vector,
+                second_action_mask_vector,
+                third_action_mask_vector,
+                fourth_action_mask_vector,
+                fifth_action_mask_vector,
+            ]
+        )
 
-            action_mask_vector.append(sub_mask)
-
-        return np.concatenate(action_mask_vector)
-
-    def step(self, action):
+    def step(self, actions):
         """
         step(action) takes in an action for the current agent (specified by
         agent_selection) and needs to update
@@ -304,57 +343,83 @@ class raw_env(AECEnv):
         - agent_selection (to the next agent)
         And any internal state used by observe() or render()
         """
-        if (
-            self.terminations[self.agent_selection]
-            or self.truncations[self.agent_selection]
-        ):
-            # handles stepping an agent which is already dead
-            # accepts a None action for the one agent, and moves the agent_selection to
-            # the next dead agent,  or if there are no more dead agents, to the next live agent
-            # self._was_dead_step(action)
-            return
-
         agent = self.agent_selection
 
-        # the agent which stepped last had its _cumulative_rewards accounted for
-        # (because it was returned by last()), so the _cumulative_rewards for this
-        # agent should start again at 0
-        self._cumulative_rewards[agent] = 0
+        player = next(
+            (player for player in self.game.players if player.id == agent), None
+        )
+        if not player:
+            printc(f"Player {agent} does not exist.", MColors.FAIL)
+            return {}, {}, {}, {}, {}
+        
+        penalization = 0
 
-        # stores action of current agent
-        self.state[self.agent_selection] = self.build_state_for_agent(agent)
+        all_action_masks = []
+        for action_index, action_id in enumerate(actions):
+            penguin_id = action_index // self.max_actions
+            action_order = action_index  - penguin_id * self.max_actions
+            penguin = next(
+                (
+                    penguin
+                    for penguin_idx, penguin in enumerate(player.penguins)
+                    if penguin_idx == penguin_id
+                ),
+                None,
+            )
+            if not penguin:
+                printc(f"Penguin does not exist.", MColors.FAIL)
+                return {}, {}, {}, {}, {}
 
-        # collect reward if it is the last agent to act
+            action_mask = self.get_action_mask(player, penguin)
+            for action_in_mask in action_mask:
+                all_action_masks.append(action_in_mask)
+            if action_mask[action_order][action_id] == 0:
+                penalization -= 1
+                continue
+            action_id = get_action_by_index(action_id)
+            self.game.handle_action(player, penguin, action_id)
+            action_mask = self.get_action_mask(player, penguin)
+            penguin_terminated = True
+            for actions_in_mask in action_mask:
+                for action in actions_in_mask:
+                    if action == 1:
+                        penguin_terminated = False
+            penguin.terminated = penguin_terminated
+        # stores state of current agent
+        self.state[agent] = self.build_state_for_agent(
+            agent, all_action_masks
+        )
         if self._agent_selector.is_last():
-            (
-                self.rewards[self.agents[0]],
-                self.rewards[self.agents[1]],
-                self.rewards[self.agents[2]],
-                self.rewards[self.agents[3]],
-            ) = self.calculate_rewards()
+            printc(f"calculated reward: {self.calculate_rewards(player)}")
+            self.rewards[agent] += self.calculate_rewards(player) + penalization
+            printc(f"active: {agent}", MColors.OKGREEN)
+            printc(f"rew: {self.calculate_rewards(player) + penalization}", MColors.OKGREEN)
+            printc(f"cum: {self._cumulative_rewards}", MColors.OKGREEN)
+            printc(self.rewards, MColors.OKGREEN)
 
-            self.num_moves += 1
-            # The truncations dictionary must be updated for all players.
-            self.truncations = {
-                agent: self.game.players[agent].all_penguins_terminated()
-                for agent in self.agents
-            }
+        self.num_moves += 1
+        # The truncations dictionary must be updated for all players.
+        self.truncations[agent] = player.all_penguins_terminated()
+        self.terminations[agent] = player.all_penguins_terminated() and player.season == self.game.max_seasons
+       
+        self.observations = {
+            agent: self.build_state_for_agent(agent) for agent in self.agents
+        }
 
-            # observe the current state
-            for i in self.agents:
-                self.observations[i] = self.state[
-                    self.agents[1 - self.agent_name_mapping[i]]
-                ]
-        else:
-            # necessary so that observe() returns a reasonable observation at all times.
-            self.state[self.agents[1 - self.agent_name_mapping[agent]]] = None
-            # no rewards are allocated until both players give an action
-            self._clear_rewards()
-
-        # selects the next agent.
-        self.agent_selection = self._agent_selector.next()
         # Adds .rewards to ._cumulative_rewards
         self._accumulate_rewards()
+        printc(f"cum af: {self._cumulative_rewards}", MColors.OKGREEN)
+        # selects the next agent.
+        self.agent_selection = self._agent_selector.next()
 
         if self.render_mode == "human":
             self.render()
+        
+        infos = {}
+        return (
+            self.observations,
+            self.rewards,
+            self.terminations,
+            self.truncations,
+            infos,
+        )

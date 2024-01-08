@@ -51,6 +51,7 @@ class Player:
 
         if card is None:
             printc(f"Player {self.player_id} does not have the card {card_short_name}.")
+            return
 
         # Check if the card has an effect
         if "ice_token" in card.on_play_effect:

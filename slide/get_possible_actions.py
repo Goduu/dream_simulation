@@ -4,7 +4,7 @@ from classes.card import CardReward
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
-from classes.action import Action
+from classes.action import Action, ActionType
 
 from constants import Dir, get_second_outer_hexagons_coordinates
 from printc import MColors, printc
@@ -44,8 +44,8 @@ def add_actions_after_passing_season(
 
             possible_actions.append(
                 [
-                    Action("turn", direction),
-                    Action("move", i),
+                    Action(ActionType.TURN, direction),
+                    Action(ActionType.MOVE, i),
                 ]
             )
 
@@ -57,9 +57,9 @@ def add_actions_after_passing_season(
                     if hexagon_empty(board, players, ice_drop_position):
                         possible_actions.append(
                             [
-                                Action("turn", direction),
-                                Action("move", i),
-                                Action("drop_ice", ice_drop_position),
+                                Action(ActionType.TURN, direction),
+                                Action(ActionType.MOVE, i),
+                                Action(ActionType.DROP_ICE, ice_drop_position),
                             ]
                         )
 
@@ -109,15 +109,15 @@ def add_actions_normal_movement(
                         if hexagon_empty(board, players, ice_drop_position):
                             possible_actions.append(
                                 [
-                                    Action("move", move_counter),
-                                    Action("drop_ice", ice_drop_position),
+                                    Action(ActionType.MOVE, move_counter),
+                                    Action(ActionType.DROP_ICE, ice_drop_position),
                                 ]
                             )
-                possible_actions.append([Action("move", move_counter)])
+                possible_actions.append([Action(ActionType.MOVE, move_counter)])
             else:
                 # if penguin still have movements left, go out of the board and start again
                 if penguin.movement_tokens > 0:
-                    possible_actions.append([Action("move_out", None)])
+                    possible_actions.append([Action(ActionType.MOVE_OUT, None)])
 
 
 def add_actions_first_movement(
@@ -141,8 +141,8 @@ def add_actions_first_movement(
                         if coordinate_available(board, players, new_coordinate):
                             possible_actions.append(
                                 [
-                                    Action("start", (coordinate, direction)),
-                                    Action("move", i),
+                                    Action(ActionType.START, (coordinate, direction)),
+                                    Action(ActionType.MOVE, i),
                                 ]
                             )
 
@@ -158,13 +158,13 @@ def check_penguin_can_use_card(
                 movement_actions = [
                     action
                     for action in possible_actions
-                    if action.type == "move_out" or action.type == "start"
+                    if action.type == ActionType.MOVE_OUT or action.type == ActionType.START
                 ]
                 move_tokens = sum(
                     [
                         action.parameter
                         for action in possible_actions
-                        if action.type == "move"
+                        if action.type == ActionType.MOVE
                     ]
                 )
                 if (
@@ -192,7 +192,7 @@ def add_play_card_actions(
         for actions in possible_actions or [[]]:
             if check_penguin_can_use_card(penguin, card, actions):
                 actions_copy = actions.copy()
-                actions_copy.append(Action("play_card", card.short_name))
+                actions_copy.append(Action(ActionType.PLAY_CARD, card.short_name))
                 play_card_actions.append(actions_copy)
 
     possible_actions.extend(play_card_actions)
@@ -200,7 +200,7 @@ def add_play_card_actions(
 
 def add_fishing_actions(possible_actions: List[List[Action]]):
     for actions in possible_actions:
-        actions.append(Action("fishing", None))
+        actions.append(Action(ActionType.FISHING, None))
 
 
 def get_possible_actions(
@@ -211,7 +211,9 @@ def get_possible_actions(
     players: List[Player],
 ) -> List[List[Action]]:
     possible_actions: List[List[Action]] = []
-
+    if player.all_penguins_terminated():
+        possible_actions.append([Action(ActionType.PASS_SEASON, None)])
+        return possible_actions
     # Penguin Movement
     if penguin.movement_tokens > 0:
         # First penguin movement (without position or direction set)
@@ -236,14 +238,14 @@ def get_possible_actions(
             for adj_hexagon in adjacent_hexagons:
                 if adj_hexagon.has_ice_block:
                     possible_actions.append(
-                        [Action("break_ice", adj_hexagon.get_coordinates())]
+                        [Action(ActionType.BREAK_ICE, adj_hexagon.get_coordinates())]
                     )
 
     # Check if the penguin can buy cards
     if card_market:
         for i, card in enumerate(card_market):
             if has_enough_tokens(penguin, card.cost):
-                possible_actions.append([Action("buy_card", i)])
+                possible_actions.append([Action(ActionType.BUY_CARD, i)])
 
     # Check if the penguin can play cards
     if player.cards:

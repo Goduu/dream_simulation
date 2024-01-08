@@ -7,7 +7,10 @@ from dream_simulation.slide.classes.card import Card
 from dream_simulation.slide.constants import Dir
 from dream_simulation.slide.get_possible_actions import get_possible_actions
 from game import SlideGame
-from possible_actions_mapping import get_action_index_by_action, get_possible_actions_mapping
+from possible_actions_mapping import (
+    get_action_index_by_action,
+    get_possible_actions_mapping,
+)
 import gym
 import numpy as np
 
@@ -42,7 +45,9 @@ class SlideEnv(gym.Env):
         self.all_cards = get_all_cards()
         self.max_actions = 5
         self.action_space = gym.spaces.MultiDiscrete(
-            [len(self.possible_actions_mapping)] * self.max_actions * self.penguin_per_player
+            [len(self.possible_actions_mapping)]
+            * self.max_actions
+            * self.penguin_per_player
         )
         self.observation_space = gym.spaces.Dict(
             {
@@ -119,18 +124,29 @@ class SlideEnv(gym.Env):
     def get_card_encoding(self, player_cards: List[Card]):
         card_encoding = [1 if card in player_cards else 0 for card in self.all_cards]
         return card_encoding
-    
+
     def get_penguin_direction_encoding(self, penguin_direction: Dir):
-        direction_encoding = [1 if direction == penguin_direction else 0 for direction in Dir]
+        direction_encoding = [
+            1 if direction == penguin_direction else 0 for direction in Dir
+        ]
         return direction_encoding
-    
+
     def get_penguin_backpack_encoding(self, penguin_backpack: List[BackpackItem]):
         backpack_encoding = {
-            'ice': [1 if item == Ice() else 0 for item in penguin_backpack],
-            'fish': [1 if item.type == FishType.A else 2 if item.type == FishType.B else 3 if item.type == FishType.C else 0 for item in penguin_backpack]
+            "ice": [1 if item == Ice() else 0 for item in penguin_backpack],
+            "fish": [
+                1
+                if item.type == FishType.A
+                else 2
+                if item.type == FishType.B
+                else 3
+                if item.type == FishType.C
+                else 0
+                for item in penguin_backpack
+            ],
         }
         return backpack_encoding
-    
+
     @property
     def observation(self):
         obs = {}
@@ -139,22 +155,27 @@ class SlideEnv(gym.Env):
                 player.id: {
                     "cards": self.get_card_encoding(player.cards),
                     "terminated": int(player.terminated),
-                    "season":  int(player.season),
+                    "season": int(player.season),
                     "penguins": {
                         "penguins": {
                             penguin.id: {
                                 "movement_tokens": penguin.movement_tokens,
-                                "fishing_tokens":  penguin.movement_tokens,
-                                "direction": self.get_penguin_direction_encoding(penguin.direction),
+                                "fishing_tokens": penguin.movement_tokens,
+                                "direction": self.get_penguin_direction_encoding(
+                                    penguin.direction
+                                ),
                                 "position": penguin.position,
                                 "cards": self.get_card_encoding(penguin.cards),
                                 "terminated": int(penguin.terminated),
-                                "backpack": self.get_penguin_backpack_encoding(penguin.backpack),
+                                "backpack": self.get_penguin_backpack_encoding(
+                                    penguin.backpack
+                                ),
                             }
                             for penguin in player.penguins
                         }
                     },
-                }}
+                }
+            }
 
         return obs
 
@@ -166,30 +187,43 @@ class SlideEnv(gym.Env):
         An array for each penguin -> check that @TODO
         """
         current_player = self.game.players[self.current_player_num]
-        
-        legal_actions_vector = [np.zeros(self.action_space.shape, dtype=bool) for _ in range(self.penguin_per_player)]
-        
+
+        legal_actions_vector = [
+            np.zeros(self.action_space.shape, dtype=bool)
+            for _ in range(self.penguin_per_player)
+        ]
+
         for penguin in current_player.penguins:
             legal_actions = get_possible_actions(
-                current_player, penguin, self.game.board, self.game.card_market, self.players
+                current_player,
+                penguin,
+                self.game.board,
+                self.game.card_market,
+                self.players,
             )
             for action in legal_actions:
-                legal_actions_vector[penguin.id][get_action_index_by_action(action)] = True
-                
-        
-        return legal_actions_vector
+                legal_actions_vector[penguin.id][
+                    get_action_index_by_action(action)
+                ] = True
 
+        return legal_actions_vector
 
     @property
     def current_player(self):
         return self.players[self.current_player_num]
-    
+
     def calculate_reward(self):
         current_player = self.game.players[self.current_player_num]
         # sum all of the card.points in player.cards and in player.penguin.cards
         player_cards_points = sum([card.points for card in current_player.cards])
-        player_penguin_cards_points = sum([card.points for penguin in current_player.penguins for card in penguin.cards])
-        
+        player_penguin_cards_points = sum(
+            [
+                card.points
+                for penguin in current_player.penguins
+                for card in penguin.cards
+            ]
+        )
+
         return player_cards_points + player_penguin_cards_points
 
     def step(self, action):
