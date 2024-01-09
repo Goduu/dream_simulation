@@ -245,18 +245,21 @@ class raw_env(AECEnv):
             return np.array([-3, -3, -3], dtype=np.float32)
         return np.array(position, dtype=np.float32)
 
-    def build_state_for_agent(self, agent: str, all_action_masks: List[List[int]] = []):
+    def build_state_for_agent(self, agent: str):
         player: Player = next(
             (player for player in self.game.players if player.id == agent), None
         )
-        if all_action_masks == []:
-            for penguin in player.penguins:
-                action_mask = self.get_action_mask(player, penguin)
-                for action_in_mask in action_mask:
-                    all_action_masks.append(action_in_mask)
+        all_penguins_possible_actions = {penguin_id: [] for penguin_id,_ in enumerate(player.penguins)}
+        all_action_masks = []
+        for penguin_id, penguin in enumerate(player.penguins):
+            action_mask, possible_actions_array = self.get_action_mask(player, penguin)
+            all_penguins_possible_actions[penguin_id].append(possible_actions_array)
+            for action_in_mask in action_mask:
+                all_action_masks.append(action_in_mask)
 
 
         state = {
+            "possible_actions_array": all_penguins_possible_actions,
             "action_mask": tuple(all_action_masks),
             "observation": {
                 "cards": self.get_card_encoding(player.cards),
@@ -290,7 +293,7 @@ class raw_env(AECEnv):
         possible_actions = get_possible_actions(
             player, penguin, self.game.board, self.game.card_market, self.game.players
         )
-
+        
         first_action_mask_vector = np.zeros(
             len(self.possible_actions_mapping), dtype=np.int8
         )
@@ -306,6 +309,15 @@ class raw_env(AECEnv):
         fifth_action_mask_vector = np.zeros(
             len(self.possible_actions_mapping), dtype=np.int8
         )
+        
+        possible_actions_array = []
+        for actions in possible_actions:
+            order = []
+            for action in actions:
+                action_index = get_action_index_by_action(action)
+                order.append(action_index)
+            possible_actions_array.append(order)
+            
 
         for actions in possible_actions:
             for index, action in enumerate(actions):
@@ -329,7 +341,7 @@ class raw_env(AECEnv):
                 fourth_action_mask_vector,
                 fifth_action_mask_vector,
             ]
-        )
+        ) , possible_actions_array
 
     def step(self, actions):
         """
@@ -344,17 +356,23 @@ class raw_env(AECEnv):
         And any internal state used by observe() or render()
         """
         agent = self.agent_selection
-
         player = next(
             (player for player in self.game.players if player.id == agent), None
         )
+        
+        if(actions is None or sum(actions) == 0):
+            printc("Action is none", MColors.WARNING)
+            self.truncations[agent] = True
+            self.terminations[agent] = True
+            return self._was_dead_step(actions)
+        
+
         if not player:
             printc(f"Player {agent} does not exist.", MColors.FAIL)
             return {}, {}, {}, {}, {}
         
         penalization = 0
 
-        all_action_masks = []
         for action_index, action_id in enumerate(actions):
             penguin_id = action_index // self.max_actions
             action_order = action_index  - penguin_id * self.max_actions
@@ -370,50 +388,32 @@ class raw_env(AECEnv):
                 printc(f"Penguin does not exist.", MColors.FAIL)
                 return {}, {}, {}, {}, {}
 
-            action_mask = self.get_action_mask(player, penguin)
-            for action_in_mask in action_mask:
-                all_action_masks.append(action_in_mask)
-            if action_mask[action_order][action_id] == 0:
-                penalization -= 1
-                continue
+            action_mask, possible_actions_array = self.get_action_mask(player, penguin)
             action_id = get_action_by_index(action_id)
             self.game.handle_action(player, penguin, action_id)
-            action_mask = self.get_action_mask(player, penguin)
-            penguin_terminated = True
-            for actions_in_mask in action_mask:
-                for action in actions_in_mask:
-                    if action == 1:
-                        penguin_terminated = False
-            penguin.terminated = penguin_terminated
+            action_mask, possible_actions_array = self.get_action_mask(player, penguin)
+            if(possible_actions_array == []):
+                penguin.terminated = True
         # stores state of current agent
-        self.state[agent] = self.build_state_for_agent(
-            agent, all_action_masks
-        )
-        if self._agent_selector.is_last():
-            printc(f"calculated reward: {self.calculate_rewards(player)}")
-            self.rewards[agent] += self.calculate_rewards(player) + penalization
-            printc(f"active: {agent}", MColors.OKGREEN)
-            printc(f"rew: {self.calculate_rewards(player) + penalization}", MColors.OKGREEN)
-            printc(f"cum: {self._cumulative_rewards}", MColors.OKGREEN)
-            printc(self.rewards, MColors.OKGREEN)
+        self.state[agent] = self.build_state_for_agent(agent)
+        
+        self.rewards[agent] += self.calculate_rewards(player) + penalization
 
         self.num_moves += 1
         # The truncations dictionary must be updated for all players.
-        self.truncations[agent] = player.all_penguins_terminated()
+        self.truncations[agent] = player.all_penguins_terminated() and player.season == self.game.max_seasons
         self.terminations[agent] = player.all_penguins_terminated() and player.season == self.game.max_seasons
-       
+    
         self.observations = {
             agent: self.build_state_for_agent(agent) for agent in self.agents
-        }
-
+            }
         # Adds .rewards to ._cumulative_rewards
         self._accumulate_rewards()
-        printc(f"cum af: {self._cumulative_rewards}", MColors.OKGREEN)
         # selects the next agent.
         self.agent_selection = self._agent_selector.next()
 
-        if self.render_mode == "human":
-            self.render()
+        # if self.render_mode == "human":
+        #     self.render()
         
         infos = {}
         return (

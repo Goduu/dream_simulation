@@ -83,10 +83,15 @@ def add_pass_season_action(possible_actions: List[Action]):
         Action(ActionType.PASS_SEASON, None),
     )
 
+def add_pass_action(possible_actions: List[Action]):
+    possible_actions.append(
+        Action(ActionType.PASS, None),
+    )
 
 def get_possible_actions_mapping() -> List[Action]:
     possible_actions = []
-
+    
+    add_pass_action(possible_actions)
     add_start_actions(possible_actions)
     add_move_actions(possible_actions)
     add_turn_actions(possible_actions)

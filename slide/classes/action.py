@@ -21,6 +21,7 @@ class ActionType(Enum):
     FISHING = "fishing"
     TURN = "turn"
     PASS_SEASON= "pass_season"
+    PASS = "pass"
 
 
 class Action:

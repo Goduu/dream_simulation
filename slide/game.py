@@ -54,8 +54,6 @@ def initialize_card_market(cards: List[Card]) -> List[Card]:
     for card in card_market:
         card.quantity -= 1
 
-    printc(f"Cards: {[card.quantity for card in cards]}", MColors.OKCYAN)
-
     return card_market
 
 
@@ -318,6 +316,8 @@ class SlideGame:
             self.drop_ice(penguin, action.parameter)
         elif action.type == ActionType.PASS_SEASON:
             self.pass_season(player)
+        elif action.type == ActionType.PASS:
+            pass
         else:
             printc(f"Unimplemented action: {action.type}", MColors.FAIL)
 
@@ -466,7 +466,7 @@ class SlideGame:
                 moving_penguin.position, moving_penguin.direction, collided_penguin
             )
             printc(
-                f"Changing direction from penguin {moving_penguin.id} from {moving_penguin.direction} to {direction_to_push_moving}",
+                f"{emojis['turn']}Changing direction from penguin {moving_penguin.id} from {moving_penguin.direction} to {direction_to_push_moving}",
                 MColors.OKGREEN,
             )
             moving_penguin.direction = direction_to_push_moving
@@ -476,7 +476,7 @@ class SlideGame:
             )
             collided_penguin.direction = direction_to_push_collided
             printc(
-                f"Changing direction from penguin {collided_penguin.id} from {collided_penguin.direction} to {direction_to_push_collided}",
+                f"{emojis['turn']}Changing direction from penguin {collided_penguin.id} from {collided_penguin.direction} to {direction_to_push_collided}",
                 MColors.OKGREEN,
             )
             self.handle_move_penguin(collided_penguin, hexagons_to_move=1)
@@ -536,6 +536,7 @@ class SlideGame:
                     f"Player {player.player_id} does not have enough tokens to buy card {selected_card.short_name}.",
                     MColors.FAIL,
                 )
+                return
 
             # Deduct the cost tokens from the player's penguin
             penguin.deduct_cost_tokens(selected_card.cost)
