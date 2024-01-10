@@ -159,8 +159,12 @@ def eval_action_mask(env_fn, num_games=100, render_mode=None, **env_kwargs):
     return round_rewards, total_rewards, winrate, scores
 
 
+import slide_stablebaseline as sz
+
 if __name__ == "__main__":
+    # env = sz.env()
     env_fn = connect_four_v3
+    env_fn = sz
 
     env_kwargs = {}
 
@@ -170,7 +174,7 @@ if __name__ == "__main__":
     # 40k steps: Winrate:  0.86, loss order of 7e-06
 
     # Train a model against itself (takes ~20 seconds on a laptop CPU)
-    train_action_mask(env_fn, steps=20_480, seed=0, **env_kwargs)
+    # train_action_mask(env_fn, steps=20_480, seed=0, **env_kwargs)
 
     # Evaluate 100 games against a random agent (winrate should be ~80%)
     eval_action_mask(env_fn, num_games=100, render_mode=None, **env_kwargs)

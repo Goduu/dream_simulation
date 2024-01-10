@@ -31,7 +31,7 @@ class Player:
         self.terminated = False
         self.season = 0
         # Other attributes as needed
-        
+
     def score(self):
         player_score = sum([card.points for card in self.cards])
         for penguin in self.penguins:
@@ -56,7 +56,10 @@ class Player:
         card: Card = self.get_card(card_short_name)
 
         if card is None:
-            printc(f"Player {self.player_id} does not have the card {card_short_name}.", MColors.WARNING)
+            printc(
+                f"Player {self.player_id} does not have the card {card_short_name}.",
+                MColors.WARNING,
+            )
             return
 
         # Check if the card has an effect

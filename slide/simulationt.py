@@ -6,6 +6,7 @@ import slidezoo as sz
 
 load_dotenv()
 
+
 def tic_tac_toe():
     from pettingzoo.classic import tictactoe_v3
 
@@ -15,5 +16,6 @@ def tic_tac_toe():
         for name in env.possible_agents
     }
     main(agents, env)
-    
+
+
 tic_tac_toe()

@@ -30,25 +30,25 @@ for agent in env.agent_iter():
     observation, reward, termination, truncation, info = env.last()
     if termination or truncation:
         actions = None
-        
+
     else:
         # this is where you would insert your policy
         actions = []
         possible_actions = observation["possible_actions_array"]
         for key in observation["possible_actions_array"]:
-           if(possible_actions[key] == [[]] or possible_actions[key] == []):
+            if possible_actions[key] == [[]] or possible_actions[key] == []:
                 penguin_possible_actions = []
-           else:
+            else:
                 penguin_possible_actions = random.choice(possible_actions[key][0])
-           for i in range(5):
-               if i < len(penguin_possible_actions):
-                   actions.append(penguin_possible_actions[i])
-               else:
+            for i in range(5):
+                if i < len(penguin_possible_actions):
+                    actions.append(penguin_possible_actions[i])
+                else:
                     actions.append(0)
     if actions == []:
         # env.step(np.zeros(15))
         env.step(None)
-        
-    else : 
+
+    else:
         env.step(actions)
 env.close()

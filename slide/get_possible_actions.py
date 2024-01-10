@@ -27,7 +27,7 @@ def add_actions_after_passing_season(
 ):
     if penguin.direction is not None or penguin.position is None:
         return
-    
+
     for i in range(1, penguin.movement_tokens + 1):
         adjacent_hexagons = get_adjacent_hexagons(board, penguin.position)
         for hexagon in adjacent_hexagons:
@@ -157,7 +157,8 @@ def check_penguin_can_use_card(
                 movement_actions = [
                     action
                     for action in possible_actions
-                    if action.type == ActionType.MOVE_OUT or action.type == ActionType.START
+                    if action.type == ActionType.MOVE_OUT
+                    or action.type == ActionType.START
                 ]
                 move_tokens = sum(
                     [

@@ -1,4 +1,3 @@
-
 def main(agents, env):
     env.reset()
 

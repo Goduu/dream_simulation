@@ -136,28 +136,30 @@ def check_for_collision(
                 return other_penguin
     return None
 
-def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
-        """
-        Moves a penguin to a new position.
 
-        """
-        if penguin.movement_tokens <= 0:
-            printc(
-                f"Penguin {penguin.id} does not have enough movement tokens.", MColors.FAIL
-            )
-            return
-        if outside_hexagon(new_position):
-            printc(f"Penguin {penguin.id} is moving outside", MColors.OKCYAN)
-            penguin.position = None
-            penguin.direction = None
-        else:
-            penguin.position = new_position
-            printc(
-                f"{emojis['move']}Penguin {penguin.id} moved to {penguin.position}",
-                MColors.OKGREEN,
-            )
-            
-        penguin.movement_tokens -= 1
+def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
+    """
+    Moves a penguin to a new position.
+
+    """
+    if penguin.movement_tokens <= 0:
+        printc(
+            f"Penguin {penguin.id} does not have enough movement tokens.", MColors.FAIL
+        )
+        return
+    if outside_hexagon(new_position):
+        printc(f"Penguin {penguin.id} is moving outside", MColors.OKCYAN)
+        penguin.position = None
+        penguin.direction = None
+    else:
+        penguin.position = new_position
+        printc(
+            f"{emojis['move']}Penguin {penguin.id} moved to {penguin.position}",
+            MColors.OKGREEN,
+        )
+
+    penguin.movement_tokens -= 1
+
 
 def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction: str):
     """
@@ -308,7 +310,11 @@ def apply_card_passive_effects(
         effect = card.passive_effect
         if trigger in effect:
             if CardReward.FISH in effect[trigger]:
-                fish_type = get_hexagon(board, penguin.position).fish_type
+                hexagon = get_hexagon(board, penguin.position)
+                if hexagon is None:
+                    printc(f"No hexagon found for {penguin.position}", MColors.FAIL)
+                    return
+                fish_type =hexagon.fish_type
                 penguin.add_in_backpack(Fish(fish_type))
             elif CardReward.ICE in effect[trigger]:
                 penguin.add_in_backpack(Ice())
@@ -334,4 +340,4 @@ def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[He
         hexagon.has_ice_block = False
         apply_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE, board)
     else:
-        print("Hexagon does not have an ice block.")
+        printc(f"Hexagon {coordinate} does not have an ice block.", MColors.FAIL)

@@ -150,13 +150,16 @@ class SlideGame:
                 if not possible_actions:
                     penguin.terminated = True
                     return
-        
+
         game_over = True
         for player in self.players:
-            if not player.all_penguins_terminated() or player.season <= self.max_seasons:
+            if (
+                not player.all_penguins_terminated()
+                or player.season <= self.max_seasons
+            ):
                 game_over = False
         return game_over
-    
+
     def terminate_penguins_without_possible_actions(self, player: Player):
         for penguin in player.penguins:
             possible_actions = get_possible_actions(
@@ -168,13 +171,13 @@ class SlideGame:
                     MColors.WARNING,
                 )
                 penguin.terminated = True
-    
+
     def check_winner(self):
         player_scores = {player.id: 0 for player in self.players}
         for player in self.players:
             player_scores[player.id] += player.score()
-        
-        #calculate and return the winner, if there is a draw return None
+
+        # calculate and return the winner, if there is a draw return None
         max_score = max(player_scores.values())
         winner = None
         for player_id, score in player_scores.items():
@@ -183,10 +186,9 @@ class SlideGame:
                     winner = player_id
                 else:
                     return None
-                
+
         return winner
-        
-                            
+
     def all_players_terminated(self):
         """
         Checks if all players in the game are terminated.

@@ -1,4 +1,3 @@
-import functools
 from typing import List, Tuple
 from all_cards import get_all_cards
 from classes.player import Player
@@ -17,7 +16,7 @@ from possible_actions_mapping import (
 )
 
 import numpy as np
-from gymnasium.spaces import Discrete, MultiDiscrete, Dict, Box, MultiBinary
+from gymnasium.spaces import  MultiDiscrete, Dict, Box
 
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector, wrappers
@@ -57,7 +56,7 @@ class raw_env(AECEnv):
         """
         The init method takes in environment arguments and
          should define the following attributes:
-        - possible_agents
+        - agents
         - render_mode
 
         Note: as of v1.18.1, the action_spaces and observation_spaces attributes are deprecated.
@@ -68,104 +67,57 @@ class raw_env(AECEnv):
         """
         self.n_players = 4
         self.max_items = 10
-        self.possible_agents = ["player_" + str(r) for r in range(self.n_players)]
+        self.agents = ["player_" + str(r) for r in range(self.n_players)]
+        self.possible_agents = self.agents[:]
         self.render_mode = render_mode
         self.game = SlideGame(self.n_players)
         self.max_actions = 5
         self.penguin_per_player = 3
         self.all_cards = get_all_cards()
-
-        # optional: a mapping between agent name and ID
-        self.agent_name_mapping = dict(
-            zip(self.possible_agents, list(range(len(self.possible_agents))))
-        )
-
-        # optional: we can define the observation and action spaces here as attributes to be used in their corresponding methods
         self.possible_actions_mapping = get_possible_actions_mapping()
+        self.agent_name_mapping = dict(zip(self.agents, list(range(len(self.agents)))))
+        self.action_spaces = {
+            agent: MultiDiscrete(
+                [len(self.possible_actions_mapping)]
+                * self.penguin_per_player
+                * self.max_actions
+            )
+            for agent in self.agents
+        }
+
+        self.observation_spaces = {
+            agent: Dict(
+                {
+                    "action_mask": Box(
+                        low=0,
+                        high=1,
+                        shape=(
+                            self.penguin_per_player * self.max_actions,
+                            len(self.possible_actions_mapping),
+                        ),
+                        dtype=np.int8,
+                    ),
+                    "observation": Box(
+                                low=-10,
+                                high=10,
+                                shape=(128,),
+                                dtype=np.float32,
+                            ),
+                }
+            )
+            for agent in self.agents
+        }
 
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
     # If your spaces change over time, remove this line (disable caching).
-    @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
-        # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
-        return Dict(
-            {
-                "action_mask": Box(
-                    low=0,
-                    high=1,
-                    shape=(
-                        self.penguin_per_player * self.max_actions,
-                        len(self.possible_actions_mapping),
-                    ),
-                    dtype=np.int8,
-                ),
-                "observation": Dict(
-                    {
-                        "cards": MultiBinary(len(self.all_cards)),
-                        "terminated": Discrete(2),
-                        "season": Discrete(3),
-                        "penguins": Dict(
-                            {
-                                "penguins": Dict(
-                                    {
-                                        penguin_id: Dict(
-                                            {
-                                                "movement_tokens": Discrete(
-                                                    self.max_items
-                                                ),
-                                                "fishing_tokens": Discrete(
-                                                    self.max_items
-                                                ),
-                                                "direction": Discrete(7),
-                                                "position": Box(
-                                                    low=-3,
-                                                    high=3,
-                                                    shape=(3,),
-                                                    dtype=np.float32,
-                                                ),
-                                                "ice_tokens": Discrete(self.max_items),
-                                                "cards": MultiBinary(
-                                                    len(self.all_cards)
-                                                ),
-                                                "terminated": Discrete(2),
-                                                "backpack": Dict(
-                                                    {
-                                                        "ice": Box(
-                                                            low=0,
-                                                            high=1,
-                                                            shape=(self.max_items,),
-                                                            dtype=np.int8,
-                                                        ),
-                                                        "fish": Box(
-                                                            low=0,
-                                                            high=4,
-                                                            shape=(self.max_items,),
-                                                            dtype=np.int8,
-                                                        ),
-                                                    }
-                                                ),
-                                            }
-                                        )
-                                        for penguin_id in range(3)
-                                    }
-                                )
-                            }
-                        ),
-                    },
-                ),
-            }
-        )
+        return self.observation_spaces[agent]
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).
-    @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return MultiDiscrete(
-            [len(self.possible_actions_mapping)]
-            * self.penguin_per_player
-            * self.max_actions
-        )
+        return self.action_spaces[agent]
 
     def render(self):
         for player in self.game.players:
@@ -202,7 +154,7 @@ class raw_env(AECEnv):
         can be called without issues.
         Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
         """
-        self.agents = self.possible_agents[:]
+        self.agents = self.agents[:]
         self.game = SlideGame(self.n_players)
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
@@ -230,7 +182,6 @@ class raw_env(AECEnv):
 
     def get_penguin_backpack_encoding(self, penguin_backpack: List[BackpackItem]):
         zeros = np.zeros((self.max_items,), dtype=np.int8)
-        ice = [1 if item == Ice() else 0 for item in penguin_backpack]
         fish = [
             1
             if item.type == FishType.A
@@ -238,17 +189,14 @@ class raw_env(AECEnv):
             if item.type == FishType.B
             else 3
             if item.type == FishType.C
+            else 4
+            if item == Ice()
             else 0
             for item in penguin_backpack
         ]
 
-        ice.extend(zeros[len(ice) :])
         fish.extend(zeros[len(fish) :])
-        backpack_encoding = {
-            "ice": np.array(ice, dtype=np.int8),
-            "fish": np.array(fish, dtype=np.int8),
-        }
-        return backpack_encoding
+        return np.array(fish, dtype=np.int8)
 
     def get_penguin_direction_encoding(self, penguin_direction: Dir):
         for index, d in enumerate(Dir):
@@ -275,40 +223,55 @@ class raw_env(AECEnv):
         all_action_masks = []
         for penguin_id, penguin in enumerate(player.penguins):
             action_mask, possible_actions_array = self.get_action_mask(player, penguin)
+            print("action_mask", action_mask)
             all_penguins_possible_actions[penguin_id].append(possible_actions_array)
             for action_in_mask in action_mask:
                 all_action_masks.append(action_in_mask)
 
         state = {
-            "possible_actions_array": all_penguins_possible_actions,
+            # "possible_actions_array": all_penguins_possible_actions,
             "action_mask": tuple(all_action_masks),
             "observation": {
                 "cards": self.get_card_encoding(player.cards),
                 "terminated": 1 if player.terminated else 0,
                 "season": player.season,
-                "penguins": {
-                    "penguins": {
-                        penguin_id: {
-                            "movement_tokens": penguin.movement_tokens,
-                            "fishing_tokens": penguin.fishing_tokens,
-                            "direction": self.get_penguin_direction_encoding(
-                                penguin.direction
-                            ),
-                            "position": self.get_position_encoding(penguin.position),
-                            "ice_tokens": penguin.ice_tokens,
-                            "cards": self.get_card_encoding(penguin.cards),
-                            "terminated": 1 if penguin.terminated else 0,
-                            "backpack": self.get_penguin_backpack_encoding(
-                                penguin.backpack
-                            ),
-                        }
-                        for penguin_id, penguin in enumerate(player.penguins)
-                    }
+                **{
+                    f"p{penguin_id}_{attr}": value
+                    for penguin_id, penguin in enumerate(player.penguins)
+                    for attr, value in {
+                        "movement_tokens": penguin.movement_tokens,
+                        "fishing_tokens": penguin.fishing_tokens,
+                        "direction": self.get_penguin_direction_encoding(
+                            penguin.direction
+                        ),
+                        "position": self.get_position_encoding(penguin.position),
+                        "ice_tokens": penguin.ice_tokens,
+                        "cards": self.get_card_encoding(penguin.cards),
+                        "terminated": 1 if penguin.terminated else 0,
+                        "backpack": self.get_penguin_backpack_encoding(
+                            penguin.backpack
+                        ),
+                    }.items()
                 },
             },
         }
-
+        state["observation"] = self.flatten_observations(state["observation"])
         return state
+    
+    def flatten_observations(self, observation):
+        """
+        Flattens the observation dictionary into an array of numbers.
+        """
+        value_list = list(observation.values())
+        #for every value in value_list, if its an array, flatten it, if it is a number append it to result
+        result = []
+        for value in value_list:
+            if type(value) == np.ndarray:
+                result.extend(value)
+            else:
+                result.append(value)
+                
+        return result
 
     def get_action_mask(self, player: Player, penguin: Penguin):
         possible_actions = get_possible_actions(
@@ -352,9 +315,9 @@ class raw_env(AECEnv):
                     fourth_action_mask_vector[action_index] = 1
                 elif index == 4:
                     fifth_action_mask_vector[action_index] = 1
-
+                    
         return (
-            np.stack(
+            tuple(np.stack(
                 [
                     first_action_mask_vector,
                     second_action_mask_vector,
@@ -362,7 +325,7 @@ class raw_env(AECEnv):
                     fourth_action_mask_vector,
                     fifth_action_mask_vector,
                 ]
-            ),
+            )),
             possible_actions_array,
         )
 

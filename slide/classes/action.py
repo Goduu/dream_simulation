@@ -20,7 +20,7 @@ class ActionType(Enum):
     BREAK_ICE = "break_ice"
     FISHING = "fishing"
     TURN = "turn"
-    PASS_SEASON= "pass_season"
+    PASS_SEASON = "pass_season"
     PASS = "pass"
 
 

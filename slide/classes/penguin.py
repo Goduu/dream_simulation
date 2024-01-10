@@ -41,6 +41,9 @@ class Penguin:
         """
         Adds an item in the penguin's backpack.
         """
+        if(len(self.backpack) == self.max_backpack_slots):
+            printc(f"Backpack from penguin{self.id} is full", MColors.WARNING)
+            return
         self.backpack.append(item)
 
     def remove_from_backpack(self, item: BackpackItem):
@@ -51,7 +54,10 @@ class Penguin:
             f"Removing {item} from backpack {[item for item in self.backpack]}",
             MColors.OKGREEN,
         )
-        self.backpack.remove(item)
+        if item in self.backpack:
+            self.backpack.remove(item)
+        else:
+            printc(f"Item {item} not found in backpack from penguin {self.id}", MColors.WARNING)
 
     def deduct_cost_tokens(self, cost: List[BackpackItem]):
         """
