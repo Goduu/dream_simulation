@@ -86,26 +86,6 @@ class Penguin:
         }
         self.direction = direction_map.get(self.direction, self.direction)
 
-    def move_penguin(self, new_position: Tuple[int, int, int]):
-        """
-        Moves a penguin to a new position.
-
-        Args:
-            penguin (Penguin): The penguin to move.
-            new_position (Tuple[int, int, int]): The new position to move the penguin to.
-        """
-        if self.movement_tokens <= 0:
-            printc(
-                f"Penguin {self.id} does not have enough movement tokens.", MColors.FAIL
-            )
-            return
-        self.position = new_position
-        self.movement_tokens -= 1
-        printc(
-            f"{emojis['move']}Penguin {self.id} moved to {self.position}",
-            MColors.OKGREEN,
-        )
-
     def move_to_start_point(self, position, direction: Dir):
         """
         Moves a penguin to the start point.

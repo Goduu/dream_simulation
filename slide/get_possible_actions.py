@@ -13,7 +13,6 @@ from utils import (
     calculate_new_position,
     coordinate_available,
     get_adjacent_hexagons,
-    get_hexagon,
     get_start_point_surrounding_directions,
     has_enough_tokens,
     hexagon_empty,
@@ -28,7 +27,7 @@ def add_actions_after_passing_season(
 ):
     if penguin.direction is not None or penguin.position is None:
         return
-
+    
     for i in range(1, penguin.movement_tokens + 1):
         adjacent_hexagons = get_adjacent_hexagons(board, penguin.position)
         for hexagon in adjacent_hexagons:

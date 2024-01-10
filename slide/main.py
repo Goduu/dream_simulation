@@ -46,9 +46,9 @@ for agent in env.agent_iter():
                else:
                     actions.append(0)
     if actions == []:
-        print('zeros')
-        env.step(np.zeros(15))
+        # env.step(np.zeros(15))
+        env.step(None)
+        
     else : 
-        print('actions',actions)
         env.step(actions)
 env.close()

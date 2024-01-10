@@ -125,13 +125,6 @@ def check_for_collision(
 ) -> Union[Penguin, None]:
     """
     Checks for collision between penguins.
-
-    Args:
-        new_position (Tuple[int, int, int]): The new position to check for collision.
-        moving_penguin (Penguin): The penguin that is moving.
-
-    Returns:
-        Union[Penguin, None]: The collided penguin if there is a collision, None otherwise.
     """
     # Implement logic to check for collisions with other penguins
     for player in players:
@@ -143,6 +136,28 @@ def check_for_collision(
                 return other_penguin
     return None
 
+def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
+        """
+        Moves a penguin to a new position.
+
+        """
+        if penguin.movement_tokens <= 0:
+            printc(
+                f"Penguin {penguin.id} does not have enough movement tokens.", MColors.FAIL
+            )
+            return
+        if outside_hexagon(new_position):
+            printc(f"Penguin {penguin.id} is moving outside", MColors.OKCYAN)
+            penguin.position = None
+            penguin.direction = None
+        else:
+            penguin.position = new_position
+            printc(
+                f"{emojis['move']}Penguin {penguin.id} moved to {penguin.position}",
+                MColors.OKGREEN,
+            )
+            
+        penguin.movement_tokens -= 1
 
 def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction: str):
     """

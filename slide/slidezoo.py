@@ -6,6 +6,7 @@ from classes.backpack_item import BackpackItem, FishType, Ice
 from classes.card import Card
 from constants import Dir
 from classes.penguin import Penguin
+from classes.action import ActionType
 from printc import MColors, printc
 from get_possible_actions import get_possible_actions
 from game import SlideGame
@@ -197,7 +198,7 @@ class raw_env(AECEnv):
         """
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
-
+        
     def calculate_rewards(self, player):
 
         player_cards_points = sum([card.points for card in player.cards])
@@ -342,7 +343,30 @@ class raw_env(AECEnv):
                 fifth_action_mask_vector,
             ]
         ) , possible_actions_array
+        
+    def take_penguin_actions(self,actions, player: Player): 
+        for action_index, action_id in enumerate(actions):
+            penguin_id = action_index // self.max_actions
+            action_order = action_index  - penguin_id * self.max_actions
+            penguin = next(
+                (
+                    penguin
+                    for penguin_idx, penguin in enumerate(player.penguins)
+                    if penguin_idx == penguin_id
+                ),
+                None,
+            )
+            if not penguin:
+                printc(f"Penguin does not exist.", MColors.FAIL)
+                return {}, {}, {}, {}, {}
 
+            action = get_action_by_index(action_id)
+            self.game.handle_action(player, penguin, action)
+            # pass season index is 0, if a penguin pass season, the other ones 
+            # would also pass
+            if action.type == ActionType.PASS_SEASON:
+                break
+            
     def step(self, actions):
         """
         step(action) takes in an action for the current agent (specified by
@@ -360,49 +384,37 @@ class raw_env(AECEnv):
             (player for player in self.game.players if player.id == agent), None
         )
         
-        if(actions is None or sum(actions) == 0):
-            printc("Action is none", MColors.WARNING)
-            self.truncations[agent] = True
-            self.terminations[agent] = True
-            return self._was_dead_step(actions)
+        if (self.terminations[agent] or self.truncations[agent]):
+            self._was_dead_step(actions)
+            return
         
 
         if not player:
             printc(f"Player {agent} does not exist.", MColors.FAIL)
             return {}, {}, {}, {}, {}
+        self.take_penguin_actions(actions, player)
         
-        penalization = 0
-
-        for action_index, action_id in enumerate(actions):
-            penguin_id = action_index // self.max_actions
-            action_order = action_index  - penguin_id * self.max_actions
-            penguin = next(
-                (
-                    penguin
-                    for penguin_idx, penguin in enumerate(player.penguins)
-                    if penguin_idx == penguin_id
-                ),
-                None,
-            )
-            if not penguin:
-                printc(f"Penguin does not exist.", MColors.FAIL)
-                return {}, {}, {}, {}, {}
-
-            action_mask, possible_actions_array = self.get_action_mask(player, penguin)
-            action_id = get_action_by_index(action_id)
-            self.game.handle_action(player, penguin, action_id)
-            action_mask, possible_actions_array = self.get_action_mask(player, penguin)
-            if(possible_actions_array == []):
-                penguin.terminated = True
+        if self.game.check_game_over():
+            winner = self.game.check_winner()
+            if winner is not None:
+                winner_player = next(
+                    (player for player in self.game.players if player.id == winner), None
+                )
+                printc(f"Player {winner} won the game with: {winner_player.score()}", MColors.YELLOW)
+                self.rewards[winner] += 100
+            else: 
+                printc(f"It was a draw! Scores: {[{player.id: player.score()} for player in self.game.players]}", MColors.YELLOW)
+            self.terminations = {i: True for i in self.agents}
+            printc("Game over", MColors.OKGREEN)
+        else: 
+            self.game.terminate_penguins_without_possible_actions(player)
+        
         # stores state of current agent
         self.state[agent] = self.build_state_for_agent(agent)
         
-        self.rewards[agent] += self.calculate_rewards(player) + penalization
+        self.rewards[agent] += self.calculate_rewards(player) 
 
         self.num_moves += 1
-        # The truncations dictionary must be updated for all players.
-        self.truncations[agent] = player.all_penguins_terminated() and player.season == self.game.max_seasons
-        self.terminations[agent] = player.all_penguins_terminated() and player.season == self.game.max_seasons
     
         self.observations = {
             agent: self.build_state_for_agent(agent) for agent in self.agents

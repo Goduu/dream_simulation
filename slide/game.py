@@ -36,6 +36,7 @@ from utils import (
     get_hexagon,
     has_enough_tokens,
     hexagon_empty,
+    move_penguin,
     outside_hexagon,
     push_penguin,
 )
@@ -140,6 +141,52 @@ class SlideGame:
 
     # returns True if given coordinates exists in self.board and has no ice block in it
 
+    def check_game_over(self):
+        for player in self.players:
+            for penguin in player.penguins:
+                possible_actions = get_possible_actions(
+                    player, penguin, self.board, self.card_market, self.players
+                )
+                if not possible_actions:
+                    penguin.terminated = True
+                    return
+        
+        game_over = True
+        for player in self.players:
+            if not player.all_penguins_terminated() or player.season <= self.max_seasons:
+                game_over = False
+        return game_over
+    
+    def terminate_penguins_without_possible_actions(self, player: Player):
+        for penguin in player.penguins:
+            possible_actions = get_possible_actions(
+                player, penguin, self.board, self.card_market, self.players
+            )
+            if not possible_actions:
+                printc(
+                    f"No actions available for penguin {penguin.id}. Moves left: {penguin.movement_tokens}",
+                    MColors.WARNING,
+                )
+                penguin.terminated = True
+    
+    def check_winner(self):
+        player_scores = {player.id: 0 for player in self.players}
+        for player in self.players:
+            player_scores[player.id] += player.score()
+        
+        #calculate and return the winner, if there is a draw return None
+        max_score = max(player_scores.values())
+        winner = None
+        for player_id, score in player_scores.items():
+            if score == max_score:
+                if winner is None:
+                    winner = player_id
+                else:
+                    return None
+                
+        return winner
+        
+                            
     def all_players_terminated(self):
         """
         Checks if all players in the game are terminated.
@@ -355,7 +402,7 @@ class SlideGame:
                 if collision_penguin:
                     self.handle_collision(penguin, collision_penguin)
                 else:
-                    penguin.move_penguin(new_position)
+                    move_penguin(penguin, new_position)
 
         else:
             printc(
@@ -415,10 +462,6 @@ class SlideGame:
     def handle_collision(self, moving_penguin: Penguin, collided_penguin: Penguin):
         """
         Handles a collision between two penguins.
-
-        Args:
-            moving_penguin (Penguin): The penguin that is moving.
-            collided_penguin (Penguin): The penguin that collided with the moving penguin.
         """
         printc(
             f"{emojis['collision']}Collision between penguins at {moving_penguin.id}{moving_penguin.position} and {collided_penguin.id}{collided_penguin.position}",
@@ -435,13 +478,13 @@ class SlideGame:
                 collided_penguin.position, collided_penguin.direction, moving_penguin
             )
             printc(
-                f"{emojis['win']}Moving penguin {moving_penguin.id} wins the collision.",
+                f"{emojis['win']} Moving penguin {moving_penguin.id} wins the collision.",
                 MColors.OKGREEN,
             )
             new_position = calculate_new_position(
                 moving_penguin.position, moving_penguin.direction, 1
             )
-            moving_penguin.move_penguin(new_position)
+            move_penguin(moving_penguin, new_position)
             # Moving penguin continues in the hexagon, collided penguin is moved to an adjacent empty hexagon
             new_position = calculate_new_position(
                 collided_penguin.position, direction_to_push, 1

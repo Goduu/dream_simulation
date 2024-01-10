@@ -5,3 +5,6 @@ Activate env:
 
 last version:
 peng/testgpt
+
+Requirements file:
+`pip freeze > requirements.txt`
