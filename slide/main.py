@@ -20,7 +20,7 @@ from ui import visualize_board
 # for card in game.card_market:
 #     printc(card, MColors.OKGREEN)
 
-import slidezoo as sz
+import slide_stablebaseline as sz
 import random
 
 env = sz.env()
@@ -35,7 +35,7 @@ for agent in env.agent_iter():
         # this is where you would insert your policy
         actions = []
         possible_actions = observation["possible_actions_array"]
-        for key in observation["possible_actions_array"]:
+        for key in possible_actions:
             if possible_actions[key] == [[]] or possible_actions[key] == []:
                 penguin_possible_actions = []
             else:
@@ -46,9 +46,7 @@ for agent in env.agent_iter():
                 else:
                     actions.append(0)
     if actions == []:
-        # env.step(np.zeros(15))
-        env.step(None)
-
+        env.step(np.zeros(15))
     else:
         env.step(actions)
 env.close()

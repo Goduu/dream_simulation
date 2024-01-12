@@ -23,15 +23,51 @@ logging.basicConfig(
 )
 
 
-def printc(message: str, color: MColors = MColors.OKBLUE) -> None:
-    # print(f"\033{color.value[0]}{message}\033[0m")
-    # if color == MColors.FAIL:
-    #     logging.error(message)
-    # elif color == MColors.WARNING:
-    #     logging.warning(message)
+class Emojis(Enum):
+    NONE = ""
+    FISH = "\U0001F41F"
+    FISHING = "\U0001F3A3"
+    ICE = "\U00002744"
+    MOVE = "\U0001F3C3"
+    PENGUIN = "\U0001F427"
+    TURN = "\U0001F43E"
+    COLLISION = "\U0001F4A5"
+    PLUS = "\U00002795"
+    MINUS = "\U00002796"
+    CARD = "\U0001F3B4"
+    START = "\U0001F680"
+    WIN = "\U0001F3C6"
+    NEW = "\U0001F195"
+    ACTION = "\U0001F3AE"
+    ERROR = "\U0000274C"
 
-    # else:
-    #     logging.info(message)
+
+def printc(
+    message: str = "",
+    color: MColors = MColors.OKBLUE,
+    emoji: Emojis = Emojis.NONE,
+) -> None:
+    parsed_message = f"{emoji.value} {message}"
+    print(f"\033{color.value[0]}{parsed_message}\033[0m")
+    if color == MColors.FAIL:
+        logging.error(parsed_message)
+    elif color == MColors.WARNING:
+        logging.warning(parsed_message)
+
+    else:
+        logging.info(message)
+    pass
+
+
+def printlog(message: str, color: MColors = MColors.OKBLUE) -> None:
+    print(f"\033{color.value[0]}{message}\033[0m")
+    if color == MColors.FAIL:
+        logging.error(message)
+    elif color == MColors.WARNING:
+        logging.warning(message)
+
+    else:
+        logging.info(message)
     pass
 
 
@@ -49,4 +85,5 @@ emojis = {
     "start": "\U0001F680",
     "win": "\U0001F3C6",
     "new": "\U0001F195",
+    "action": "\U0001F3AE",
 }

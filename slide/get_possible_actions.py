@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from classes.card import Card
+from classes.card import Card, CardAgent
 from classes.card import CardReward
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
@@ -13,6 +13,7 @@ from utils import (
     calculate_new_position,
     coordinate_available,
     get_adjacent_hexagons,
+    get_hexagon,
     get_start_point_surrounding_directions,
     has_enough_tokens,
     hexagon_empty,
@@ -149,7 +150,18 @@ def add_actions_first_movement(
 def check_penguin_can_use_card(
     penguin: Penguin, card: Card, possible_actions: List[Action]
 ) -> bool:
-    effects = card.on_play_effect
+    your_effects = (
+        card.on_play_effect[CardAgent.YOURSELF]
+        if CardAgent.YOURSELF in card.on_play_effect
+        else {}
+    )
+    all_effects = (
+        card.on_play_effect[CardAgent.ALL]
+        if CardAgent.ALL in card.on_play_effect
+        else {}
+    )
+    # merge both effects
+    effects = {**your_effects, **all_effects}
     for effect_key in effects:
         effect_value = effects[effect_key]
         if effect_value < 0:
@@ -178,6 +190,9 @@ def check_penguin_can_use_card(
             elif effect_key == CardReward.ICE:
                 if penguin.ice_tokens < abs(effect_value):
                     return False
+            elif effect_key == CardReward.FISH:
+                if len(penguin.backpack) >= penguin.max_backpack_slots:
+                    return False
             else:
                 printc(f"Effect key {effect_key} not found", MColors.FAIL)
     return True
@@ -198,9 +213,10 @@ def add_play_card_actions(
     possible_actions.extend(play_card_actions)
 
 
-def add_fishing_actions(possible_actions: List[List[Action]]):
+def add_fishing_actions(penguin: Penguin, possible_actions: List[List[Action]]):
     for actions in possible_actions:
-        actions.append(Action(ActionType.FISHING, None))
+        if len(penguin.backpack) < penguin.max_backpack_slots:
+            actions.append(Action(ActionType.FISHING, None))
 
 
 def get_possible_actions(
@@ -211,7 +227,7 @@ def get_possible_actions(
     players: List[Player],
 ) -> List[List[Action]]:
     possible_actions: List[List[Action]] = []
-    if player.all_penguins_terminated():
+    if player.all_penguins_terminated() and player.season < 3:
         possible_actions.append([Action(ActionType.PASS_SEASON, None)])
         return possible_actions
     # Penguin Movement
@@ -252,6 +268,6 @@ def get_possible_actions(
         add_play_card_actions(player, penguin, possible_actions)
     # Check if the penguin can fish
     if penguin.fishing_tokens > 0:
-        add_fishing_actions(possible_actions)
+        add_fishing_actions(penguin, possible_actions)
 
     return possible_actions

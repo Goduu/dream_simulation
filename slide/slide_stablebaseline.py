@@ -6,6 +6,7 @@ from classes.card import Card
 from constants import Dir
 from classes.penguin import Penguin
 from classes.action import ActionType
+from utils import hexagon_has_penguin
 from printc import MColors, printc
 from get_possible_actions import get_possible_actions
 from game import SlideGame
@@ -16,7 +17,7 @@ from possible_actions_mapping import (
 )
 
 import numpy as np
-from gymnasium.spaces import  MultiDiscrete, Dict, Box
+from gymnasium.spaces import MultiDiscrete, Dict, Box
 
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector, wrappers
@@ -98,11 +99,11 @@ class raw_env(AECEnv):
                         dtype=np.int8,
                     ),
                     "observation": Box(
-                                low=-10,
-                                high=10,
-                                shape=(128,),
-                                dtype=np.float32,
-                            ),
+                        low=-10,
+                        high=10,
+                        shape=(204,),
+                        dtype=np.float32,
+                    ),
                 }
             )
             for agent in self.agents
@@ -213,6 +214,25 @@ class raw_env(AECEnv):
             return np.array([-3, -3, -3], dtype=np.float32)
         return np.array(position, dtype=np.float32)
 
+    def get_board_encoding(self):
+        board_encoding = []
+        for id, hexagon in enumerate(self.game.board):
+            has_ice = hexagon.has_ice_block
+            player, penguin = hexagon_has_penguin(hexagon, self.game.players)
+            board_encoding.append(id)
+            board_encoding.append(1 if has_ice else 0)
+            board_encoding.append(player.player_id if player else 0)
+            board_encoding.append(
+                0
+                if not penguin
+                else 1
+                if penguin.type["name"] == "BIG"
+                else 2
+                if penguin.type["name"] == "MED"
+                else 3
+            )
+        return np.array(board_encoding, dtype=np.int8)
+
     def build_state_for_agent(self, agent: str):
         player: Player = next(
             (player for player in self.game.players if player.id == agent), None
@@ -223,15 +243,19 @@ class raw_env(AECEnv):
         all_action_masks = []
         for penguin_id, penguin in enumerate(player.penguins):
             action_mask, possible_actions_array = self.get_action_mask(player, penguin)
-            print("action_mask", action_mask)
-            all_penguins_possible_actions[penguin_id].append(possible_actions_array)
+            if possible_actions_array != []:
+                all_penguins_possible_actions[penguin_id].append(possible_actions_array)
             for action_in_mask in action_mask:
+                assert (
+                    len(action_in_mask) == 112
+                ), f"Deu ruim {action_in_mask} {len(action_in_mask)}"
                 all_action_masks.append(action_in_mask)
 
         state = {
-            # "possible_actions_array": all_penguins_possible_actions,
+            "possible_actions_array": all_penguins_possible_actions,
             "action_mask": tuple(all_action_masks),
             "observation": {
+                "board": self.get_board_encoding(),
                 "cards": self.get_card_encoding(player.cards),
                 "terminated": 1 if player.terminated else 0,
                 "season": player.season,
@@ -257,20 +281,20 @@ class raw_env(AECEnv):
         }
         state["observation"] = self.flatten_observations(state["observation"])
         return state
-    
+
     def flatten_observations(self, observation):
         """
         Flattens the observation dictionary into an array of numbers.
         """
         value_list = list(observation.values())
-        #for every value in value_list, if its an array, flatten it, if it is a number append it to result
+        # for every value in value_list, if its an array, flatten it, if it is a number append it to result
         result = []
         for value in value_list:
             if type(value) == np.ndarray:
                 result.extend(value)
             else:
                 result.append(value)
-                
+
         return result
 
     def get_action_mask(self, player: Player, penguin: Penguin):
@@ -300,7 +324,8 @@ class raw_env(AECEnv):
             for action in actions:
                 action_index = get_action_index_by_action(action)
                 order.append(action_index)
-            possible_actions_array.append(order)
+            if order != []:
+                possible_actions_array.append(order)
 
         for actions in possible_actions:
             for index, action in enumerate(actions):
@@ -315,17 +340,19 @@ class raw_env(AECEnv):
                     fourth_action_mask_vector[action_index] = 1
                 elif index == 4:
                     fifth_action_mask_vector[action_index] = 1
-                    
+
         return (
-            tuple(np.stack(
-                [
-                    first_action_mask_vector,
-                    second_action_mask_vector,
-                    third_action_mask_vector,
-                    fourth_action_mask_vector,
-                    fifth_action_mask_vector,
-                ]
-            )),
+            tuple(
+                np.stack(
+                    [
+                        first_action_mask_vector,
+                        second_action_mask_vector,
+                        third_action_mask_vector,
+                        fourth_action_mask_vector,
+                        fifth_action_mask_vector,
+                    ]
+                )
+            ),
             possible_actions_array,
         )
 
@@ -389,7 +416,10 @@ class raw_env(AECEnv):
                     f"Player {winner} won the game with: {winner_player.score()}",
                     MColors.YELLOW,
                 )
-                self.rewards[winner] += 100
+                self.rewards[winner] += 1
+                for agent in self.possible_agents:
+                    if agent != winner:
+                        self.rewards[agent] -= 1
             else:
                 printc(
                     f"It was a draw! Scores: {[{player.id: player.score()} for player in self.game.players]}",
@@ -403,7 +433,7 @@ class raw_env(AECEnv):
         # stores state of current agent
         self.state[agent] = self.build_state_for_agent(agent)
 
-        self.rewards[agent] += self.calculate_rewards(player)
+        # self.rewards[agent] += self.calculate_rewards(player)
 
         self.num_moves += 1
 
@@ -415,10 +445,11 @@ class raw_env(AECEnv):
         # selects the next agent.
         self.agent_selection = self._agent_selector.next()
 
-        # if self.render_mode == "human":
-        #     self.render()
+        if self.render_mode == "human":
+            self.render()
 
         infos = {}
+
         return (
             self.observations,
             self.rewards,

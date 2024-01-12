@@ -9,12 +9,24 @@ class CardPassiveTrigger(Enum):
     COLLIDE_PENGUIN = ("collide_penguin",)
 
 
+class CardAgent(Enum):
+    YOURSELF = ("yourself",)
+    OTHERS = ("others",)
+    OTHER = ("other",)
+    ALL = ("all",)
+
+
 class CardReward(Enum):
     FISH = ("fish",)
     ICE = ("ice",)
     MOVEMENT = ("movement",)
     FISHING = ("fishing",)
     BACKPACK = ("backpack",)
+
+
+class SpecialEffects(Enum):
+    IGNORE_COLLISION = ("ignore_collision",)
+    TURN = ("turn",)
 
 
 class Card:

@@ -4,9 +4,9 @@ from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
 from classes.backpack_item import BackpackItem, Fish, Ice
-from classes.card import CardPassiveTrigger, CardReward
+from classes.card import CardAgent, CardPassiveTrigger, CardReward
 from constants import Dir, get_start_point_direction_possible_coordinates
-from printc import MColors, printc, emojis
+from printc import Emojis, MColors, printc, emojis
 
 
 def calculate_new_position(
@@ -144,7 +144,9 @@ def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
     """
     if penguin.movement_tokens <= 0:
         printc(
-            f"Penguin {penguin.id} does not have enough movement tokens.", MColors.FAIL
+            f"Penguin {penguin.id} does not have enough movement tokens.",
+            MColors.FAIL,
+            Emojis.ERROR,
         )
         return
     if outside_hexagon(new_position):
@@ -154,8 +156,9 @@ def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
     else:
         penguin.position = new_position
         printc(
-            f"{emojis['move']}Penguin {penguin.id} moved to {penguin.position}",
+            f"Penguin {penguin.id} moved to {penguin.position}",
             MColors.OKGREEN,
+            Emojis.MOVE,
         )
 
     penguin.movement_tokens -= 1
@@ -166,21 +169,27 @@ def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction
     Pushes a penguin to a new position.
     """
     if outside_hexagon(new_position):
-        printc(f"Penguin {penguin.id} is peeing pushed outside", MColors.OKCYAN)
+        printc(
+            f"Penguin {penguin.id} is peeing pushed outside",
+            MColors.OKCYAN,
+            Emojis.MOVE,
+        )
         penguin.position = None
         penguin.direction = None
         return
 
     penguin.direction = direction
     printc(
-        f"{emojis['turn']}Changing direction from penguin {penguin.id} from {penguin.direction} to {direction} to push to {new_position}",
+        f"Changing direction from penguin {penguin.id} from {penguin.direction} to {direction} to push to {new_position}",
         MColors.OKGREEN,
+        Emojis.TURN,
     )
 
     penguin.position = new_position
     printc(
-        f"{emojis['move']}Penguin {penguin.id} pushed to {penguin.position}",
+        f"Penguin {penguin.id} pushed to {penguin.position}",
         MColors.OKGREEN,
+        Emojis.MOVE,
     )
 
 
@@ -308,20 +317,22 @@ def apply_card_passive_effects(
     """
     for card in penguin.cards:
         effect = card.passive_effect
-        if trigger in effect:
-            if CardReward.FISH in effect[trigger]:
-                hexagon = get_hexagon(board, penguin.position)
-                if hexagon is None:
-                    printc(f"No hexagon found for {penguin.position}", MColors.FAIL)
-                    return
-                fish_type =hexagon.fish_type
-                penguin.add_in_backpack(Fish(fish_type))
-            elif CardReward.ICE in effect[trigger]:
-                penguin.add_in_backpack(Ice())
-            elif CardReward.MOVEMENT in effect[trigger]:
-                penguin.movement_tokens += effect[trigger][CardReward.MOVEMENT]
-            elif CardReward.FISHING in effect[trigger]:
-                penguin.fishing_tokens += effect[trigger][CardReward.FISHING]
+        if CardAgent.YOURSELF in effect:
+            your_effect = effect[CardAgent.YOURSELF]
+            if trigger in your_effect:
+                if CardReward.FISH in your_effect[trigger]:
+                    hexagon = get_hexagon(board, penguin.position)
+                    if hexagon is None:
+                        printc(f"No hexagon found for {penguin.position}", MColors.FAIL)
+                        return
+                    fish_type = hexagon.fish_type
+                    penguin.add_in_backpack(Fish(fish_type))
+                elif CardReward.ICE in your_effect[trigger]:
+                    penguin.add_in_backpack(Ice())
+                elif CardReward.MOVEMENT in your_effect[trigger]:
+                    penguin.movement_tokens += your_effect[trigger][CardReward.MOVEMENT]
+                elif CardReward.FISHING in your_effect[trigger]:
+                    penguin.fishing_tokens += your_effect[trigger][CardReward.FISHING]
 
 
 def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[Hexagon]):
@@ -341,3 +352,12 @@ def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[He
         apply_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE, board)
     else:
         printc(f"Hexagon {coordinate} does not have an ice block.", MColors.FAIL)
+
+
+def hexagon_has_penguin(hexagon: Hexagon, players: List[Player]):
+    hexagon_coordinates = hexagon.get_coordinates()
+    for player in players:
+        for penguin in player.penguins:
+            if penguin.position == hexagon_coordinates:
+                return player, penguin
+    return None, None

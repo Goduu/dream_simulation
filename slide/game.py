@@ -28,7 +28,7 @@ from all_cards import get_all_cards
 from classes.action import Action, ActionType
 from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
-from printc import printc, MColors, emojis
+from printc import Emojis, printc, MColors, emojis
 from utils import (
     break_ice,
     calculate_new_position,
@@ -119,9 +119,6 @@ class SlideGame:
     def __init__(self, num_players: int):
         """
         Initializes a new instance of the FishyPenguinsGame class.
-
-        Args:
-            num_players (int): The number of players in the game.
         """
         all_cards = get_all_cards()
         self.players: List[Player] = [
@@ -143,20 +140,11 @@ class SlideGame:
 
     def check_game_over(self):
         for player in self.players:
-            for penguin in player.penguins:
-                possible_actions = get_possible_actions(
-                    player, penguin, self.board, self.card_market, self.players
-                )
-                if not possible_actions:
-                    penguin.terminated = True
-                    return
+            self.terminate_penguins_without_possible_actions(player)
 
         game_over = True
         for player in self.players:
-            if (
-                not player.all_penguins_terminated()
-                or player.season <= self.max_seasons
-            ):
+            if not player.all_penguins_terminated() or player.season < self.max_seasons:
                 game_over = False
         return game_over
 
@@ -165,9 +153,9 @@ class SlideGame:
             possible_actions = get_possible_actions(
                 player, penguin, self.board, self.card_market, self.players
             )
-            if not possible_actions:
+            if len(possible_actions) == 0 or not possible_actions:
                 printc(
-                    f"No actions available for penguin {penguin.id}. Moves left: {penguin.movement_tokens}",
+                    f"{penguin.id} has no actions available",
                     MColors.WARNING,
                 )
                 penguin.terminated = True
@@ -192,9 +180,6 @@ class SlideGame:
     def all_players_terminated(self):
         """
         Checks if all players in the game are terminated.
-
-        Returns:
-            bool: True if all players are terminated, False otherwise.
         """
         for player in self.players:
             if not player.terminated:
@@ -215,9 +200,6 @@ class SlideGame:
     def pass_season(self, player: Player):
         """
         Passes the current season for a player.
-
-        Args:
-            player (Player): The player to pass the season for.
         """
         player.season += 1
         if player.season < self.max_seasons:
@@ -231,12 +213,12 @@ class SlideGame:
             player.penguins = new_penguins
 
             printc(
-                f"Player {player.player_id} passed to season {player.season}",
+                f"{player.player_id} passed to season {player.season}",
                 MColors.OKCYAN,
             )
         else:
             player.terminated = True
-            printc(f"Player {player.player_id} terminated", MColors.YELLOW)
+            printc(f"{player.id} terminated", MColors.YELLOW)
 
     def take_action(self, player: Player, penguin: Penguin, actions, max_actions):
         current_player = self.players[self.current_player_index]
@@ -268,7 +250,7 @@ class SlideGame:
         all_penguins_terminated = current_player.all_penguins_terminated()
         if all_penguins_terminated:
             printc(
-                f"All penguins terminated for player {current_player.player_id}",
+                f"{current_player.player_id} has all penguins terminated.",
                 MColors.WARNING,
             )
             self.pass_season(current_player)
@@ -289,14 +271,10 @@ class SlideGame:
     def chose_penguin_actions(self, player: Player, penguin: Penguin):
         """
         Handles the actions for a penguin in the game.
-
-        Args:
-            player (Player): The player who owns the penguin.
-            penguin (Penguin): The penguin to handle actions for.
         """
         current_player = self.players[self.current_player_index]
         printc(
-            f"{emojis['new']}Player {current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
+            f"{emojis['new']}{current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
             MColors.OKGREEN,
         )
 
@@ -319,26 +297,28 @@ class SlideGame:
         """
         Handles an action for a penguin in the game.
 
-        Args:
-            player (Player): The player who owns the penguin.
-            penguin (Penguin): The penguin to handle actions for.
-            action (Action): The action to handle.
         """
+        printc(
+            f"{penguin.id} Handling action: {action}",
+            MColors.OKGREEN,
+            Emojis.ACTION,
+        )
         if action.type == ActionType.START:
             position, direction = action.parameter
             penguin.move_to_start_point(position, direction)
         elif action.type == ActionType.TURN:
             penguin.direction = action.parameter
             printc(
-                f"{emojis['turn']}Penguin {penguin.id} turns to direction {penguin.direction}",
+                f"{penguin.id} turns to direction {penguin.direction}",
                 MColors.OKGREEN,
+                Emojis.TURN,
             )
         elif action.type == ActionType.MOVE:
             self.handle_move_penguin(penguin, action.parameter)
         elif action.type == ActionType.MOVE_OUT:
             if penguin.movement_tokens <= 0:
                 printc(
-                    f"Penguin {penguin.id} does not have enough movement tokens to move out.",
+                    f"{penguin.id} does not have enough movement tokens to move out.",
                     MColors.FAIL,
                 )
                 return
@@ -346,13 +326,13 @@ class SlideGame:
             penguin.direction = None
             penguin.movement_tokens -= 1
             printc(
-                f"Penguin {penguin.id} moved out of the board.",
+                f"{penguin.id} moved out of the board.",
                 MColors.OKGREEN,
             )
         elif action.type == ActionType.BREAK_ICE:
             break_ice(penguin, action.parameter, self.board)
             printc(
-                f"Penguin {penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
+                f"{penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
                 MColors.OKGREEN,
             )
         elif action.type == ActionType.BUY_CARD:
@@ -384,15 +364,16 @@ class SlideGame:
 
             # Implement logic to update the penguin's position based on the chosen direction and hexagons to move
             printc(
-                f"{emojis['move']}Moving penguin {penguin.id} {hexagons_to_move} hexagons in direction {direction}",
+                f"{penguin.id} moving {hexagons_to_move} hexagons in direction {direction}",
                 MColors.OKGREEN,
+                Emojis.MOVE,
             )
             for _ in range(hexagons_to_move):
                 if penguin.direction is None:
-                    printc(f"Penguin {penguin.id} has no direction.", MColors.WARNING)
+                    printc(f"{penguin.id} has no direction.", MColors.WARNING)
                     return
                 if penguin.position is None:
-                    printc(f"Penguin {penguin.id} has no position.", MColors.WARNING)
+                    printc(f"{penguin.id} has no position.", MColors.WARNING)
                     return
 
                 new_position = calculate_new_position(penguin.position, direction, 1)
@@ -408,7 +389,7 @@ class SlideGame:
 
         else:
             printc(
-                f"Not enough movement tokens left for penguin {penguin.id}.",
+                f"{penguin.id} don't have enough movement tokens left.",
                 MColors.WARNING,
             )
 
@@ -466,8 +447,9 @@ class SlideGame:
         Handles a collision between two penguins.
         """
         printc(
-            f"{emojis['collision']}Collision between penguins at {moving_penguin.id}{moving_penguin.position} and {collided_penguin.id}{collided_penguin.position}",
+            f"Collision between penguins at {moving_penguin.id}{moving_penguin.position} and {collided_penguin.id}{collided_penguin.position}",
             MColors.OKCYAN,
+            Emojis.COLLISION,
         )
 
         # Check ice tokens to determine the winner
@@ -480,8 +462,9 @@ class SlideGame:
                 collided_penguin.position, collided_penguin.direction, moving_penguin
             )
             printc(
-                f"{emojis['win']} Moving penguin {moving_penguin.id} wins the collision.",
+                f"{moving_penguin.id} (moving) wins the collision.",
                 MColors.OKGREEN,
+                Emojis.WIN,
             )
             new_position = calculate_new_position(
                 moving_penguin.position, moving_penguin.direction, 1
@@ -497,8 +480,9 @@ class SlideGame:
                 moving_penguin.position, moving_penguin.direction, collided_penguin
             )
             printc(
-                f"{emojis['win']}Collided penguin {collided_penguin.id} wins the collision.",
+                f"{collided_penguin.id} (collided) wins the collision.",
                 MColors.OKGREEN,
+                Emojis.WIN,
             )
             new_position = calculate_new_position(
                 moving_penguin.position, direction_to_push, 1
@@ -511,8 +495,9 @@ class SlideGame:
                 moving_penguin.position, moving_penguin.direction, collided_penguin
             )
             printc(
-                f"{emojis['turn']}Changing direction from penguin {moving_penguin.id} from {moving_penguin.direction} to {direction_to_push_moving}",
+                f"{moving_penguin.id} changing direction from {moving_penguin.direction} to {direction_to_push_moving}",
                 MColors.OKGREEN,
+                Emojis.TURN,
             )
             moving_penguin.direction = direction_to_push_moving
             self.handle_move_penguin(moving_penguin, hexagons_to_move=1)
@@ -521,8 +506,9 @@ class SlideGame:
             )
             collided_penguin.direction = direction_to_push_collided
             printc(
-                f"{emojis['turn']}Changing direction from penguin {collided_penguin.id} from {collided_penguin.direction} to {direction_to_push_collided}",
+                f"{collided_penguin.id} changing direction from {collided_penguin.direction} to {direction_to_push_collided}",
                 MColors.OKGREEN,
+                Emojis.TURN,
             )
             self.handle_move_penguin(collided_penguin, hexagons_to_move=1)
 
@@ -536,28 +522,37 @@ class SlideGame:
         Returns:
         int: The number of fish caught.
         """
+        printc(
+            f"{penguin.id} fishes at {penguin.position}.",
+            MColors.OKGREEN,
+            Emojis.FISHING,
+        )
         hexagon = get_hexagon(self.board, penguin.position)
         if penguin.position is not None and hexagon is not None:
             # Check if the penguin is in the same hexagon as the provided hexagon
 
             # Add the collected fish to the penguin's backpack
             # Assuming the backpack is a list, you might need to adapt based on your implementation
+            collected_fish = 0
             for _ in range(hexagon.fish_quantity):
                 if len(penguin.backpack) <= penguin.max_backpack_slots:
                     penguin.add_in_backpack(Fish(hexagon.fish_type))
-                else:
-                    printc(
-                        f"Penguin {penguin.id} has no space in its backpack.",
-                        MColors.FAIL,
-                    )
+                    collected_fish += 1
 
             # Update the fishing tokens of the penguin
             penguin.fishing_tokens -= 1
 
             printc(
-                f"{emojis['fishing']}{hexagon.fish_quantity} {hexagon.fish_type} fish collected by Penguin {penguin.id}.",
+                f"{penguin.id} collected {collected_fish} {hexagon.fish_type} fish.",
                 MColors.OKGREEN,
+                Emojis.FISHING,
             )
+            fishes_let_behind = hexagon.fish_quantity - collected_fish
+            if fishes_let_behind > 0:
+                printc(
+                    f"{penguin.id} has no space in backpack. Left {fishes_let_behind} behind.",
+                    MColors.FAIL,
+                )
         else:
             printc(
                 f"Penguin {penguin.id} has no postion or hexagon no found {penguin.position} {hexagon}",
@@ -578,7 +573,7 @@ class SlideGame:
             # Check if the player has enough tokens to buy the card
             if not has_enough_tokens(penguin, selected_card.cost):
                 printc(
-                    f"Player {player.player_id} does not have enough tokens to buy card {selected_card.short_name}.",
+                    f"{player.player_id} does not have enough tokens to buy card {selected_card.short_name}.",
                     MColors.FAIL,
                 )
                 return
@@ -593,8 +588,9 @@ class SlideGame:
             self.card_market.pop(card_index)
 
             printc(
-                f"{emojis['plus']}{emojis['card']}Card {selected_card.short_name} bought by Penguin {penguin.id}.",
+                f"{penguin.id} bought card {selected_card.short_name}.",
                 MColors.YELLOW,
+                Emojis.CARD,
             )
 
             # Add another random card to the market which still has at least one card left
@@ -603,18 +599,24 @@ class SlideGame:
             if cards_left:
                 new_card = random.choice(cards_left)
                 printc(
-                    f"{emojis['plus']}Cards {new_card.short_name} added to market.",
+                    f"Cards {new_card.short_name} added to market.",
                     MColors.OKCYAN,
+                    Emojis.PLUS,
                 )
                 new_card.quantity -= 1
                 self.card_market.append(new_card)
             else:
-                printc("No cards left", MColors.WARNING)
+                printc("No cards left to add to market", MColors.WARNING)
 
     def drop_ice(self, penguin: Penguin, coordinates: Tuple[int, int, int]):
         """
         Drops ice at the given coordinate.
         """
+        printc(
+            f"{penguin.id} dropping Ice block at {coordinates}.",
+            MColors.OKGREEN,
+            Emojis.ICE,
+        )
         # Check if the penguin has an ice block in its backpack
         if Ice() in penguin.backpack:
             if hexagon_empty(self.board, self.players, coordinates):
@@ -627,10 +629,11 @@ class SlideGame:
                 penguin.ice_tokens -= 1
 
                 printc(
-                    f"{emojis['ice']}Ice block dropped by Penguin {penguin.id}.",
+                    f"{penguin.id} dropped Ice block at {coordinates}.",
                     MColors.OKGREEN,
+                    Emojis.ICE,
                 )
             else:
-                printc("Hexagon is occupied by another penguin.", MColors.WARNING)
+                printc("Hexagon is occupied by another penguin.", MColors.FAIL)
         else:
             printc("Penguin does not have an ice block in its backpack.", MColors.FAIL)

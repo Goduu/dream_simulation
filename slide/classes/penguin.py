@@ -3,7 +3,7 @@ from classes.backpack_item import BackpackItem, Ice
 from classes.card import Card, CardPassiveTrigger
 from constants import Dir
 
-from printc import MColors, printc, emojis
+from printc import Emojis, MColors, printc, emojis
 
 # Constants for penguin types
 BIG_PENGUIN = {"name": "BIG", "movement": 2, "fishing": 2, "ice": 4, "slots": 8}
@@ -41,8 +41,8 @@ class Penguin:
         """
         Adds an item in the penguin's backpack.
         """
-        if(len(self.backpack) == self.max_backpack_slots):
-            printc(f"Backpack from penguin{self.id} is full", MColors.WARNING)
+        if len(self.backpack) == self.max_backpack_slots:
+            printc(f"{self.id}'s backpack is full", MColors.WARNING)
             return
         self.backpack.append(item)
 
@@ -51,23 +51,17 @@ class Penguin:
         Removes an item from the penguin's backpack.
         """
         printc(
-            f"Removing {item} from backpack {[item for item in self.backpack]}",
+            f"{self.id} removing {item} from backpack {[item for item in self.backpack]}",
             MColors.OKGREEN,
         )
         if item in self.backpack:
             self.backpack.remove(item)
         else:
-            printc(f"Item {item} not found in backpack from penguin {self.id}", MColors.WARNING)
+            printc(f"{self.id} item {item} not found in backpack", MColors.WARNING)
 
     def deduct_cost_tokens(self, cost: List[BackpackItem]):
         """
         Deducts cost tokens from the given penguin.
-
-        Parameters:
-        cost (List[Tuple[str, int]]): A list of tuples representing the fish type and quantity to be deducted.
-
-        Returns:
-        None
         """
         # Deduct the cost tokens from the player's penguin
         for item, quantity in cost:
@@ -104,6 +98,7 @@ class Penguin:
         self.position = position
         self.direction = direction
         printc(
-            f"{emojis['start']}Penguin {self.id} moved in the board to {self.position} direction {self.direction}",
+            f"{self.id} moved to board on {self.position} direction {self.direction}",
             MColors.OKGREEN,
+            Emojis.START,
         )
