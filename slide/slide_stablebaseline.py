@@ -406,8 +406,9 @@ class raw_env(AECEnv):
         self.take_penguin_actions(actions, player)
 
         if self.game.check_game_over():
-            winner = self.game.check_winner()
-            if winner is not None:
+            winners = self.game.check_winner()
+            if len(winners) == 1:
+                winner = winners[0]
                 winner_player = next(
                     (player for player in self.game.players if player.id == winner),
                     None,
@@ -416,15 +417,23 @@ class raw_env(AECEnv):
                     f"Player {winner} won the game with: {winner_player.score()}",
                     MColors.YELLOW,
                 )
-                self.rewards[winner] += 1
-                for agent in self.possible_agents:
-                    if agent != winner:
-                        self.rewards[agent] -= 1
             else:
-                printc(
-                    f"It was a draw! Scores: {[{player.id: player.score()} for player in self.game.players]}",
-                    MColors.YELLOW,
-                )
+                # print the winners and scores
+                printc(f"Its a tie! Winners:", MColors.OK_GREEN)
+                for winner_id in winners:
+                    winner_player = next(
+                        (
+                            player
+                            for player in self.game.players
+                            if player.id == winner_id
+                        ),
+                        None,
+                    )
+                    printc(
+                        f"Player {winner_id} score: {winner_player.score()}",
+                        MColors.YELLOW,
+                    )
+
             self.terminations = {i: True for i in self.agents}
             printc("Game over", MColors.OKGREEN)
         else:

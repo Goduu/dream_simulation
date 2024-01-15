@@ -12,7 +12,7 @@ from typing import List, Tuple
 
 from classes.card import Card
 from classes.backpack_item import Fish, Ice
-from classes.card import CardPassiveTrigger, CardReward
+from classes.card import CardPassiveTrigger, CardOnPlayReward
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
@@ -26,6 +26,7 @@ from constants import (
 )
 from all_cards import get_all_cards
 from classes.action import Action, ActionType
+from card_optimization.card_metrics import CardMetrics
 from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
 from printc import Emojis, printc, MColors, emojis
@@ -38,6 +39,7 @@ from utils import (
     hexagon_empty,
     move_penguin,
     outside_hexagon,
+    play_card,
     push_penguin,
 )
 
@@ -116,11 +118,12 @@ class SlideGame:
         max_seasons (int): The maximum number of seasons in the game.
     """
 
-    def __init__(self, num_players: int):
+    def __init__(self, num_players: int, cards: List[Card], metrics: List[CardMetrics]):
         """
         Initializes a new instance of the FishyPenguinsGame class.
         """
-        all_cards = get_all_cards()
+        all_cards = cards or get_all_cards()
+        self.metrics = metrics
         self.players: List[Player] = [
             Player(player_id) for player_id in range(num_players)
         ]
@@ -153,6 +156,7 @@ class SlideGame:
             possible_actions = get_possible_actions(
                 player, penguin, self.board, self.card_market, self.players
             )
+
             if len(possible_actions) == 0 or not possible_actions:
                 printc(
                     f"{penguin.id} has no actions available",
@@ -160,22 +164,23 @@ class SlideGame:
                 )
                 penguin.terminated = True
 
-    def check_winner(self):
+    def check_winner(self) -> List[Player]:
         player_scores = {player.id: 0 for player in self.players}
         for player in self.players:
             player_scores[player.id] += player.score()
 
         # calculate and return the winner, if there is a draw return None
         max_score = max(player_scores.values())
-        winner = None
+        winners = []
         for player_id, score in player_scores.items():
             if score == max_score:
-                if winner is None:
-                    winner = player_id
-                else:
-                    return None
+                winner = next(
+                    (player for player in self.players if player.id == player_id),
+                    None,
+                )
+                winners.append(winner)
 
-        return winner
+        return winners
 
     def all_players_terminated(self):
         """
@@ -234,6 +239,21 @@ class SlideGame:
 
         self.move_to_next_player()
 
+    def record_cards_win(self, cards: List[Card]):
+        for card in cards:
+            card_metrics = next(
+                (metrics for metrics in (self.metrics) if metrics.card_id == card.id),
+                None,
+            )
+            card_metrics.record_win()
+
+    def update_winners_card_metrics(self, winners: List[Player]):
+        for winner in winners:
+            self.record_cards_win(winner.cards)
+
+            for penguin in winner.penguins:
+                self.record_cards_win(penguin.cards)
+
     def play_turn(self):
         """
         Plays a turn in the game.
@@ -242,24 +262,32 @@ class SlideGame:
             bool: True if the game has ended, False otherwise.
         """
 
-        if self.all_players_terminated():
-            printc("END GAME: All players terminated", MColors.YELLOW)
+        if self.check_game_over():
+            winners = self.check_winner()
+            if len(winners) == 1:
+                winner = winners[0]
+                printc(
+                    f"Player {winner} won the game with: {winner.score()}",
+                    MColors.YELLOW,
+                )
+            else:
+                # print the winners and scores
+                printc(f"Its a tie! Winners:", MColors.OKGREEN)
+                for winner in winners:
+                    
+                    printc(
+                        f"Player {winner.id} score: {winner.score()}",
+                        MColors.YELLOW,
+                    )
+            self.update_winners_card_metrics(winners)
+
             return True
 
         current_player = self.players[self.current_player_index]
-        all_penguins_terminated = current_player.all_penguins_terminated()
-        if all_penguins_terminated:
-            printc(
-                f"{current_player.player_id} has all penguins terminated.",
-                MColors.WARNING,
-            )
-            self.pass_season(current_player)
-            self.move_to_next_player()
-            return False
 
         for penguin in current_player.penguins:
             if not penguin.terminated:
-                self.chose_penguin_actions(current_player, penguin)
+                self.chose_and_handles_penguin_actions(current_player, penguin)
 
         # Implement logic for passing to the next season, checking for game end conditions, etc.
         # You can add more game-related logic here
@@ -268,7 +296,7 @@ class SlideGame:
         self.move_to_next_player()
         return False
 
-    def chose_penguin_actions(self, player: Player, penguin: Penguin):
+    def chose_and_handles_penguin_actions(self, player: Player, penguin: Penguin):
         """
         Handles the actions for a penguin in the game.
         """
@@ -330,7 +358,7 @@ class SlideGame:
                 MColors.OKGREEN,
             )
         elif action.type == ActionType.BREAK_ICE:
-            break_ice(penguin, action.parameter, self.board)
+            break_ice(penguin, action.parameter, self.board, self.players)
             printc(
                 f"{penguin.id} at {penguin.position} breaks the ice block to an adjacent hexagon.",
                 MColors.OKGREEN,
@@ -340,7 +368,7 @@ class SlideGame:
         elif action.type == ActionType.FISHING:
             self.fish(penguin)
         elif action.type == ActionType.PLAY_CARD:
-            player.play_card(penguin, action.parameter)
+            play_card(player, penguin, action.parameter,self.metrics, self.players)
         elif action.type == ActionType.DROP_ICE:
             self.drop_ice(penguin, action.parameter)
         elif action.type == ActionType.PASS_SEASON:
@@ -488,7 +516,7 @@ class SlideGame:
                 moving_penguin.position, direction_to_push, 1
             )
             # Collided penguin continues in the hexagon, moving penguin is moved to an adjacent empty hexagon
-            push_penguin(moving_penguin, new_position, direction_to_push)
+            move_penguin(moving_penguin, new_position)
         else:
             printc("It's a tie! Both penguins are pushed", MColors.OKGREEN)
             direction_to_push_moving = self.find_direction_to_push(

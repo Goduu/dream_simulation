@@ -1,7 +1,6 @@
 from typing import List
 from classes.penguin import Penguin
-from classes.backpack_item import Fish, FishType, Ice
-from classes.card import Card, CardReward
+from classes.card import Card
 from classes.penguin import BIG_PENGUIN, MEDIUM_PENGUIN, SMALL_PENGUIN
 
 from printc import Emojis, MColors, printc, emojis
@@ -29,7 +28,7 @@ class Player:
         ]
         self.cards: List[Card] = []  # List to store player's cards
         self.terminated = False
-        self.season = 0
+        self.season = 1
         # Other attributes as needed
 
     def score(self):
@@ -47,75 +46,6 @@ class Player:
             if card.short_name == card_short_name:
                 return card
         return None
-
-    def play_card(self, penguin: Penguin, card_short_name: str):
-        """
-        Plays a card from the given player's hand.
-        """
-        # Check if the player has the card
-        card: Card = self.get_card(card_short_name)
-
-        if card is None:
-            printc(
-                f"Player {self.player_id} does not have the card {card_short_name}.",
-                MColors.FAIL,
-            )
-            return
-
-        # Check if the card has an effect
-        if CardReward.ICE in card.on_play_effect:
-            printc(
-                f"{penguin.id} on play effect: {card.on_play_effect[CardReward.ICE]} Ice",
-                MColors.OKGREEN,
-                Emojis.CARD,
-            )
-            penguin.ice_tokens += card.on_play_effect[CardReward.ICE]
-            penguin.add_in_backpack(Ice())
-        if CardReward.MOVEMENT in card.on_play_effect:
-            printc(
-                f"{penguin.id} on play effect: {card.on_play_effect[CardReward.MOVEMENT]} Movement",
-                MColors.OKGREEN,
-                Emojis.CARD,
-            )
-            if (
-                penguin.movement_tokens <= 0
-                and card.on_play_effect[CardReward.MOVEMENT] < 0
-            ):
-                printc(
-                    f"Penguin {penguin.id} does not have enough movement tokens to play card: {card_short_name}.",
-                    MColors.FAIL,
-                )
-                return
-            penguin.movement_tokens += card.on_play_effect[CardReward.MOVEMENT]
-        if CardReward.FISHING in card.on_play_effect:
-            printc(
-                f"{penguin.id} on play effect: {card.on_play_effect[CardReward.FISHING]} Fishing",
-                MColors.OKGREEN,
-                Emojis.CARD,
-            )
-            penguin.fishing_tokens += card.on_play_effect[CardReward.FISHING]
-        if CardReward.FISH in card.on_play_effect:
-            printc(f"{penguin.id} on play effect: 1 Fish", MColors.OKGREEN, Emojis.CARD)
-            penguin.add_in_backpack(Fish(FishType.A))
-        if CardReward.BACKPACK in card.on_play_effect:
-            printc(
-                f"{penguin.id} on play effect: {card.on_play_effect[CardReward.BACKPACK]} Backpack Slot",
-                MColors.OKGREEN,
-                Emojis.CARD,
-            )
-            penguin.max_backpack_slots += card.on_play_effect[CardReward.BACKPACK]
-
-        # Remove the card from the player's hand
-        self.cards.remove(card)
-
-        # Add the card to the penguin's cards
-        penguin.cards.append(card)
-
-        printc(
-            f"{penguin.id} played card {card_short_name}.",
-            MColors.OKGREEN,
-            Emojis.CARD,
-        )
 
     def all_penguins_terminated(self):
         """

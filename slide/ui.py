@@ -9,7 +9,6 @@ def visualize_board(game: SlideGame):
     fig, ax = plt.subplots()
 
     hex_size = 0.5  # Adjust the hexagon size
-    hex_spacing = 5.0  # Adjust the spacing between hexagons
 
     # Plot hexagons
     for hexagon in game.board:

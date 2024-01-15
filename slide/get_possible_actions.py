@@ -1,6 +1,6 @@
 from typing import List, Tuple
 from classes.card import Card, CardAgent
-from classes.card import CardReward
+from classes.card import CardOnPlayReward
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
@@ -165,7 +165,7 @@ def check_penguin_can_use_card(
     for effect_key in effects:
         effect_value = effects[effect_key]
         if effect_value < 0:
-            if effect_key == CardReward.MOVEMENT:
+            if effect_key == CardOnPlayReward.MOVEMENT:
                 movement_actions = [
                     action
                     for action in possible_actions
@@ -184,13 +184,13 @@ def check_penguin_can_use_card(
                     < abs(effect_value) + movement_actions.__len__() + move_tokens
                 ):
                     return False
-            elif effect_key == CardReward.FISHING:
+            elif effect_key == CardOnPlayReward.FISHING:
                 if penguin.fishing_tokens < abs(effect_value):
                     return False
-            elif effect_key == CardReward.ICE:
+            elif effect_key == CardOnPlayReward.ICE:
                 if penguin.ice_tokens < abs(effect_value):
                     return False
-            elif effect_key == CardReward.FISH:
+            elif effect_key == CardOnPlayReward.FISH:
                 if len(penguin.backpack) >= penguin.max_backpack_slots:
                     return False
             else:
@@ -217,6 +217,15 @@ def add_fishing_actions(penguin: Penguin, possible_actions: List[List[Action]]):
     for actions in possible_actions:
         if len(penguin.backpack) < penguin.max_backpack_slots:
             actions.append(Action(ActionType.FISHING, None))
+
+
+def add_pass_season_action(
+    player: Player, penguin: Penguin, possible_actions: List[Action]
+):
+    if player.season >= 3 or len(possible_actions) != 0:
+        return
+
+    possible_actions.append([Action(ActionType.PASS_SEASON, None)])
 
 
 def get_possible_actions(
@@ -269,5 +278,7 @@ def get_possible_actions(
     # Check if the penguin can fish
     if penguin.fishing_tokens > 0:
         add_fishing_actions(penguin, possible_actions)
+
+    add_pass_season_action(player, penguin, possible_actions)
 
     return possible_actions

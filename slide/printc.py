@@ -47,15 +47,15 @@ def printc(
     color: MColors = MColors.OKBLUE,
     emoji: Emojis = Emojis.NONE,
 ) -> None:
-    parsed_message = f"{emoji.value} {message}"
-    print(f"\033{color.value[0]}{parsed_message}\033[0m")
-    if color == MColors.FAIL:
-        logging.error(parsed_message)
-    elif color == MColors.WARNING:
-        logging.warning(parsed_message)
+    # parsed_message = f"{emoji.value} {message}"
+    # print(f"\033{color.value[0]}{parsed_message}\033[0m")
+    # if color == MColors.FAIL:
+    #     logging.error(parsed_message)
+    # elif color == MColors.WARNING:
+    #     logging.warning(parsed_message)
 
-    else:
-        logging.info(message)
+    # else:
+    #     logging.info(message)
     pass
 
 
