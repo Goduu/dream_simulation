@@ -358,7 +358,12 @@ def check_card_passive_effects(
                     apply_card_passive_effect(all_effects, random_penguin)
 
 
-def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[Hexagon], players: List[Player]):
+def break_ice(
+    penguin: Penguin,
+    coordinate: Tuple[int, int, int],
+    board: List[Hexagon],
+    players: List[Player],
+):
     """
     Breaks the ice at the given position.
 
@@ -372,7 +377,9 @@ def break_ice(penguin: Penguin, coordinate: Tuple[int, int, int], board: List[He
     if hexagon and hexagon.has_ice_block:
         penguin.ice_tokens += 1
         hexagon.has_ice_block = False
-        check_card_passive_effects(penguin, CardPassiveTrigger.BREAK_ICE, board, players)
+        check_card_passive_effects(
+            penguin, CardPassiveTrigger.BREAK_ICE, board, players
+        )
     else:
         printc(f"Hexagon {coordinate} does not have an ice block.", MColors.FAIL)
 

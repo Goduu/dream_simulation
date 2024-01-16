@@ -214,18 +214,27 @@ def add_play_card_actions(
 
 
 def add_fishing_actions(penguin: Penguin, possible_actions: List[List[Action]]):
-    for actions in possible_actions:
-        if len(penguin.backpack) < penguin.max_backpack_slots:
+    if len(penguin.backpack) < penguin.max_backpack_slots:
+        for actions in possible_actions:
             actions.append(Action(ActionType.FISHING, None))
 
 
-def add_pass_season_action(
-    player: Player, penguin: Penguin, possible_actions: List[Action]
-):
+def add_pass_season_action(player: Player, possible_actions: List[Action]):
     if player.season >= 3 or len(possible_actions) != 0:
         return
 
     possible_actions.append([Action(ActionType.PASS_SEASON, None)])
+
+
+def add_buy_card_action(
+    penguin: Penguin, possible_actions: List[List[Action]], card_market: List[Card]
+):
+    for i, card in enumerate(card_market):
+        if has_enough_tokens(penguin, card.cost):
+            for actions in possible_actions:
+                actions.append(Action(ActionType.BUY_CARD, i))
+            if len(possible_actions) == 0:
+                possible_actions.append([Action(ActionType.BUY_CARD, i)])
 
 
 def get_possible_actions(
@@ -266,19 +275,18 @@ def get_possible_actions(
                         [Action(ActionType.BREAK_ICE, adj_hexagon.get_coordinates())]
                     )
 
-    # Check if the penguin can buy cards
-    if card_market:
-        for i, card in enumerate(card_market):
-            if has_enough_tokens(penguin, card.cost):
-                possible_actions.append([Action(ActionType.BUY_CARD, i)])
-
-    # Check if the penguin can play cards
-    if player.cards:
-        add_play_card_actions(player, penguin, possible_actions)
     # Check if the penguin can fish
     if penguin.fishing_tokens > 0:
         add_fishing_actions(penguin, possible_actions)
 
-    add_pass_season_action(player, penguin, possible_actions)
+    # Check if the penguin can play cards
+    if player.cards:
+        add_play_card_actions(player, penguin, possible_actions)
+
+    # Check if the penguin can buy cards
+    if card_market:
+        add_buy_card_action(penguin, possible_actions, card_market)
+
+    add_pass_season_action(player, possible_actions)
 
     return possible_actions

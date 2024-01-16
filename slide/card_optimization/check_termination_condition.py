@@ -1,7 +1,9 @@
-
 target_fitness = 100
 
-def check_termination_condition(current_generation: int, max_generations: int, fitness_scores):
+
+def check_termination_condition(
+    current_generation: int, max_generations: int, fitness_scores
+):
     """
     Checks if the termination condition of the genetic algorithm has been met.
 
@@ -12,7 +14,9 @@ def check_termination_condition(current_generation: int, max_generations: int, f
     """
     # Check if the current generation has reached the maximum limit
     if current_generation >= max_generations:
-        print(f"Termination condition met: Reached maximum generations ({max_generations}).")
+        print(
+            f"Termination condition met: Reached maximum generations ({max_generations})."
+        )
         return True
 
     # Check if the best fitness score has reached or exceeded the target

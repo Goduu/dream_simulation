@@ -6,6 +6,7 @@ from card_optimization.chromosome import (
 
 population_size = 25
 
+
 def initialize_population():
     population = []
     cards = []
@@ -17,7 +18,7 @@ def initialize_population():
         cards.append(card)
         cardMetrics = CardMetrics(card.id)
         metrics.append(cardMetrics)
-        
+
     print("paha eita")
-    print(f'population-- 1{population[0]}')
+    print(f"population-- 1{population[0]}")
     return population, cards, metrics

@@ -3,6 +3,8 @@ import json
 from typing import Dict, List, Tuple
 import uuid
 
+from classes.backpack_item import Fish
+
 
 class CardPassiveTrigger(Enum):
     BREAK_ICE = ("break_ice",)
@@ -78,23 +80,29 @@ class Card:
         self.passive_effect = passive_effect
         self.on_play_effect = on_play_effects
         self.quantity = quantity
-        
+
     def to_json(self):
         """
         Serializes the Card object to a JSON-formatted string.
         """
-        return json.dumps({
-            'id': str(self.id),  # Convert UUID to string
-            'short_name': self.short_name,
-            'cost': self.cost,
-            'type': self.type,
-            'effect': self.effect,
-            'points': self.points,
-            'passive_effect': self._serialize_complex_attribute(self.passive_effect),
-            'on_play_effect': self._serialize_complex_attribute(self.on_play_effect),
-            'quantity': self.quantity
-            })
-    
+        return json.dumps(
+            {
+                "id": str(self.id),  # Convert UUID to string
+                "short_name": self.short_name,
+                "cost": self._serialize_complex_attribute(self.cost),
+                "type": self.type,
+                "effect": self.effect,
+                "points": self.points,
+                "passive_effect": self._serialize_complex_attribute(
+                    self.passive_effect
+                ),
+                "on_play_effect": self._serialize_complex_attribute(
+                    self.on_play_effect
+                ),
+                "quantity": self.quantity,
+            }
+        )
+
     @staticmethod
     def _serialize_complex_attribute(attr):
         """
@@ -104,14 +112,19 @@ class Card:
         if isinstance(attr, Enum):
             return attr.value[0]
         elif isinstance(attr, dict):
-            return {key.value[0]: Card._serialize_complex_attribute(value) for key, value in attr.items()}
+            return {
+                key.value[0]: Card._serialize_complex_attribute(value)
+                for key, value in attr.items()
+            }
         elif isinstance(attr, list):
             return [Card._serialize_complex_attribute(item) for item in attr]
         elif isinstance(attr, tuple):
             return tuple(Card._serialize_complex_attribute(item) for item in attr)
+        elif isinstance(attr, Fish):
+            return attr.to_json()
         else:
             return attr
-        
+
     @staticmethod
     def from_json(json_str):
         """

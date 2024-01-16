@@ -19,7 +19,8 @@ def mutate(dna: DNA, mutation_rate):
         mutated_dna.cost,
         mutated_dna.on_play_effect,
         mutated_dna.passive_effect,
-        mutated_dna.points):
+        mutated_dna.points,
+    ):
         if random.random() < mutation_rate:
             # Perform mutation based on the type of gene
             # print('paha eita', gene)
@@ -29,7 +30,8 @@ def mutate(dna: DNA, mutation_rate):
                     for gene in genes:
                         gene.chromosome.quantity = random.choice(
                             range(
-                                gene.type.min_quantity_range, gene.type.max_quantity_range + 1
+                                gene.type.min_quantity_range,
+                                gene.type.max_quantity_range + 1,
                             )
                         )
                 elif genes[0].type.name in ["OnPlayEffect", "PassiveEffect"]:
@@ -38,7 +40,8 @@ def mutate(dna: DNA, mutation_rate):
                         gene.chromosome.feature = random.choice(gene.type.features)
                         gene.chromosome.quantity = random.choice(
                             range(
-                                gene.type.min_quantity_range, gene.type.max_quantity_range + 1
+                                gene.type.min_quantity_range,
+                                gene.type.max_quantity_range + 1,
                             )
                         )
                 elif genes[0].type.name == "Points":
@@ -46,7 +49,8 @@ def mutate(dna: DNA, mutation_rate):
                     for gene in genes:
                         gene.chromosome.quantity = random.choice(
                             range(
-                                gene.type.min_quantity_range, gene.type.max_quantity_range + 1
+                                gene.type.min_quantity_range,
+                                gene.type.max_quantity_range + 1,
                             )
                         )
 

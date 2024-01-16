@@ -12,7 +12,6 @@ from typing import List, Tuple
 
 from classes.card import Card
 from classes.backpack_item import Fish, Ice
-from classes.card import CardPassiveTrigger, CardOnPlayReward
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
@@ -29,7 +28,7 @@ from classes.action import Action, ActionType
 from card_optimization.card_metrics import CardMetrics
 from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
-from printc import Emojis, printc, MColors, emojis
+from printc import Emojis, printc, MColors
 from utils import (
     break_ice,
     calculate_new_position,
@@ -137,6 +136,7 @@ class SlideGame:
         self.all_cards = all_cards
         self.round = 0
         self.max_seasons = 3
+        self.cards_bought = 0
         # Other attributes and initialization as needed
 
     # returns True if given coordinates exists in self.board and has no ice block in it
@@ -152,6 +152,9 @@ class SlideGame:
         return game_over
 
     def terminate_penguins_without_possible_actions(self, player: Player):
+        '''
+        Check if penguins have actions left and terminate the ones without possible actions
+        '''
         for penguin in player.penguins:
             possible_actions = get_possible_actions(
                 player, penguin, self.board, self.card_market, self.players
@@ -274,13 +277,13 @@ class SlideGame:
                 # print the winners and scores
                 printc(f"Its a tie! Winners:", MColors.OKGREEN)
                 for winner in winners:
-                    
                     printc(
                         f"Player {winner.id} score: {winner.score()}",
                         MColors.YELLOW,
                     )
             self.update_winners_card_metrics(winners)
-
+            printc(f"metrics:: {self.metrics}")
+            printc(f"cards_bought:: {self.cards_bought}")
             return True
 
         current_player = self.players[self.current_player_index]
@@ -302,8 +305,9 @@ class SlideGame:
         """
         current_player = self.players[self.current_player_index]
         printc(
-            f"{emojis['new']}{current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
+            f"{current_player.player_id}'s turn for penguin {penguin.id} at {penguin.position}",
             MColors.OKGREEN,
+            Emojis.NEW,
         )
 
         # Implement logic for player actions (move, break ice, buy card, etc.) for each penguin
@@ -368,7 +372,7 @@ class SlideGame:
         elif action.type == ActionType.FISHING:
             self.fish(penguin)
         elif action.type == ActionType.PLAY_CARD:
-            play_card(player, penguin, action.parameter,self.metrics, self.players)
+            play_card(player, penguin, action.parameter, self.metrics, self.players)
         elif action.type == ActionType.DROP_ICE:
             self.drop_ice(penguin, action.parameter)
         elif action.type == ActionType.PASS_SEASON:
@@ -563,7 +567,7 @@ class SlideGame:
             # Assuming the backpack is a list, you might need to adapt based on your implementation
             collected_fish = 0
             for _ in range(hexagon.fish_quantity):
-                if len(penguin.backpack) <= penguin.max_backpack_slots:
+                if len(penguin.backpack) < penguin.max_backpack_slots:
                     penguin.add_in_backpack(Fish(hexagon.fish_type))
                     collected_fish += 1
 
@@ -620,6 +624,7 @@ class SlideGame:
                 MColors.YELLOW,
                 Emojis.CARD,
             )
+            self.cards_bought += 1
 
             # Add another random card to the market which still has at least one card left
             # filter all cards which has quantity > 0

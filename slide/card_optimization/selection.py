@@ -1,5 +1,6 @@
 import random
 
+
 def selection(dnas, fitness_scores, num_parents):
     """
     Selects a number of parents for the next generation using roulette wheel selection.

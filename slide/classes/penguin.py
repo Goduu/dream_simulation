@@ -7,7 +7,7 @@ from printc import Emojis, MColors, printc, emojis
 
 # Constants for penguin types
 BIG_PENGUIN = {"name": "BIG", "movement": 2, "fishing": 2, "ice": 4, "slots": 8}
-MEDIUM_PENGUIN = {"name": "MED", "movement": 3, "fishing": 3, "ice": 2, "slots": 3}
+MEDIUM_PENGUIN = {"name": "MED", "movement": 3, "fishing": 3, "ice": 2, "slots": 4}
 SMALL_PENGUIN = {"name": "SMALL", "movement": 4, "fishing": 2, "ice": 1, "slots": 6}
 
 

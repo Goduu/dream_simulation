@@ -7,6 +7,11 @@ class CardMetrics:
             {}
         )  # Dictionary to count occurrences in different strategies
 
+    def __repr__(self) -> str:
+        return (
+            f"CardMetrics: {self.usage_count}, {self.win_count}, {self.strategy_counts}"
+        )
+
     def record_usage(self):
         """Increments the usage count of the card."""
         self.usage_count += 1

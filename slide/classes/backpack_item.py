@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 
 
 class FishType(Enum):
@@ -21,6 +22,25 @@ class Fish:
     def __eq__(self, other):
         return self.type == other.type
 
+    def to_json(self):
+        """
+        Serializes the Fish object to a JSON-formatted string.
+        """
+        return json.dumps(
+            {
+                "type": self.type.value,
+            }
+        )
+
+    @staticmethod
+    def from_json(json_str):
+        """
+        Deserializes the JSON-formatted string to a Fish object.
+        Note: This method assumes the JSON string is in the correct format.
+        """
+        data = json.loads(json_str)
+        return Fish(fish_type=data.type)
+
 
 class Ice:
     """
@@ -36,6 +56,24 @@ class Ice:
 
     def __eq__(self, other):
         return self.type == other.type
+
+    def to_json(self):
+        """
+        Serializes the Fish object to a JSON-formatted string.
+        """
+        return json.dumps(
+            {
+                "type": self.type,
+            }
+        )
+
+    def from_json(json_str):
+        """
+        Deserializes the JSON-formatted string to a Card object.
+        Note: This method assumes the JSON string is in the correct format.
+        """
+        data = json.loads(json_str)
+        return Ice()
 
 
 class BackpackItem:

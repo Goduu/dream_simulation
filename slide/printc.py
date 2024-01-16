@@ -55,7 +55,7 @@ def printc(
     #     logging.warning(parsed_message)
 
     # else:
-    #     logging.info(message)
+    #     logging.info(parsed_message)
     pass
 
 
