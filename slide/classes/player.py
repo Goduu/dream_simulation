@@ -1,20 +1,17 @@
+"""
+Represents a player in the game.
+"""
 from typing import List
 from classes.penguin import Penguin
 from classes.card import Card
 from classes.penguin import BIG_PENGUIN, MEDIUM_PENGUIN, SMALL_PENGUIN
 
-from printc import Emojis, MColors, printc, emojis
+from printc import MColors, printc
 
 
 class Player:
     """
     Represents a player in the game.
-
-    Attributes:
-    name (str): The player's name.
-    hand (list of Card): The cards in the player's hand.
-    penguins (list of Penguin): The player's penguins.
-    tokens (int): The number of tokens the player has.
     """
 
     def __init__(self, player_id: int):
@@ -32,6 +29,9 @@ class Player:
         # Other attributes as needed
 
     def score(self):
+        """
+        Calculates the player's score
+        """
         player_score = sum([card.points for card in self.cards])
         for penguin in self.penguins:
             player_score += sum([card.points for card in penguin.cards])
@@ -59,17 +59,24 @@ class Player:
                 return False
         return True
 
-    # function that print using the function printc all the penguins properties from the player in a table format
+    # function that print using the function printc all the penguins properties
+    # from the player in a table format
     def print_penguins(self):
+        """
+        Prints the penguins of the player
+        """
         printc(f"Player {self.player_id} penguins:", MColors.OKBLUE)
         printc(
-            f"{'Penguin':<10}{'Position':<10}{'Direction':<10}{'Movement':<10}{'Fishing':<10}{'Ice':<10}{'Backpack':<40}{'Cards':<10}",
+            f"{'Penguin':<10}{'Position':<10}{'Direction':<10}{'Movement':<10} \
+            {'Fishing':<10}{'Ice':<10}{'Backpack':<40}{'Cards':<10}",
             MColors.OKBLUE,
         )
         for penguin in self.penguins:
             q, r, s = penguin.position if penguin.position else ("-", "-", "-")
             direction = penguin.direction or "-"
             printc(
-                f"{penguin.id:<10}{q},{r},{s:<10}{direction:<10}{penguin.movement_tokens:<10}{penguin.fishing_tokens:<10}{penguin.ice_tokens:<10}{f'{[item for item in penguin.backpack]}':<40}{[card.short_name for card in penguin.cards]}",
+                f"{penguin.id:<10}{q},{r},{s:<10}{direction:<10}{penguin.movement_tokens:<10}\
+                {penguin.fishing_tokens:<10}{penguin.ice_tokens:<10}{f'{list(penguin.backpack)}':<40} \
+                {[card.short_name for card in penguin.cards]}",
                 MColors.OKBLUE,
             )

@@ -19,6 +19,4 @@ def initialize_population():
         cardMetrics = CardMetrics(card.id)
         metrics.append(cardMetrics)
 
-    print("paha eita")
-    print(f"population-- 1{population[0]}")
     return population, cards, metrics

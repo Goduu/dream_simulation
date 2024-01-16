@@ -15,6 +15,7 @@ from classes.backpack_item import Fish, Ice
 from classes.penguin import Penguin
 from classes.hexagon import Hexagon
 from classes.player import Player
+from classes.action import Action, ActionType
 
 from constants import (
     get_fish_tile,
@@ -24,9 +25,7 @@ from constants import (
     Dir,
 )
 from all_cards import get_all_cards
-from classes.action import Action, ActionType
 from card_optimization.card_metrics import CardMetrics
-from possible_actions_mapping import get_action_by_index
 from get_possible_actions import get_possible_actions
 from printc import Emojis, printc, MColors
 from utils import (
@@ -142,6 +141,9 @@ class SlideGame:
     # returns True if given coordinates exists in self.board and has no ice block in it
 
     def check_game_over(self):
+        """
+        Checks if the end game condition was reached.
+        """
         for player in self.players:
             self.terminate_penguins_without_possible_actions(player)
 
@@ -152,9 +154,9 @@ class SlideGame:
         return game_over
 
     def terminate_penguins_without_possible_actions(self, player: Player):
-        '''
+        """
         Check if penguins have actions left and terminate the ones without possible actions
-        '''
+        """
         for penguin in player.penguins:
             possible_actions = get_possible_actions(
                 player, penguin, self.board, self.card_market, self.players
@@ -168,6 +170,9 @@ class SlideGame:
                 penguin.terminated = True
 
     def check_winner(self) -> List[Player]:
+        """
+        Scores for each player and return the winner.
+        """
         player_scores = {player.id: 0 for player in self.players}
         for player in self.players:
             player_scores[player.id] += player.score()
@@ -228,21 +233,10 @@ class SlideGame:
             player.terminated = True
             printc(f"{player.id} terminated", MColors.YELLOW)
 
-    def take_action(self, player: Player, penguin: Penguin, actions, max_actions):
-        current_player = self.players[self.current_player_index]
-        # create a for to iterate over actions and current_player.penguins at the same time
-        actions_per_penguin = [
-            actions[i : i + max_actions] for i in range(0, len(actions), max_actions)
-        ]
-        for penguin_index, actions in enumerate(actions_per_penguin):
-            penguin = current_player.penguins[penguin_index]
-            for action in actions:
-                action = get_action_by_index(action)
-                self.handle_action(current_player, penguin, action)
-
-        self.move_to_next_player()
-
     def record_cards_win(self, cards: List[Card]):
+        """
+        Find the card and record win.
+        """
         for card in cards:
             card_metrics = next(
                 (metrics for metrics in (self.metrics) if metrics.card_id == card.id),
@@ -251,6 +245,9 @@ class SlideGame:
             card_metrics.record_win()
 
     def update_winners_card_metrics(self, winners: List[Player]):
+        """
+        Record card win for the winner cards.
+        """
         for winner in winners:
             self.record_cards_win(winner.cards)
 
@@ -275,7 +272,7 @@ class SlideGame:
                 )
             else:
                 # print the winners and scores
-                printc(f"Its a tie! Winners:", MColors.OKGREEN)
+                printc("Its a tie! Winners:", MColors.OKGREEN)
                 for winner in winners:
                     printc(
                         f"Player {winner.id} score: {winner.score()}",
@@ -394,7 +391,8 @@ class SlideGame:
         if penguin.movement_tokens >= hexagons_to_move:
             direction = penguin.direction
 
-            # Implement logic to update the penguin's position based on the chosen direction and hexagons to move
+            # Implement logic to update the penguin's position based on the
+            # chosen direction and hexagons to move
             printc(
                 f"{penguin.id} moving {hexagons_to_move} hexagons in direction {direction}",
                 MColors.OKGREEN,
@@ -489,7 +487,8 @@ class SlideGame:
             moving_penguin.ice_tokens > collided_penguin.ice_tokens
             or collided_penguin.direction is None
         ):
-            # search for an unoccupied and not ice blocked hexagon in clockwise sense and move the losing penguin
+            # search for an unoccupied and not ice blocked hexagon in
+            # clockwise sense and move the losing penguin
             direction_to_push = self.find_direction_to_push(
                 collided_penguin.position, collided_penguin.direction, moving_penguin
             )
@@ -502,7 +501,8 @@ class SlideGame:
                 moving_penguin.position, moving_penguin.direction, 1
             )
             move_penguin(moving_penguin, new_position)
-            # Moving penguin continues in the hexagon, collided penguin is moved to an adjacent empty hexagon
+            # Moving penguin continues in the hexagon, collided penguin is moved
+            # to an adjacent empty hexagon
             new_position = calculate_new_position(
                 collided_penguin.position, direction_to_push, 1
             )
@@ -519,7 +519,8 @@ class SlideGame:
             new_position = calculate_new_position(
                 moving_penguin.position, direction_to_push, 1
             )
-            # Collided penguin continues in the hexagon, moving penguin is moved to an adjacent empty hexagon
+            # Collided penguin continues in the hexagon, moving penguin
+            # is moved to an adjacent empty hexagon
             move_penguin(moving_penguin, new_position)
         else:
             printc("It's a tie! Both penguins are pushed", MColors.OKGREEN)

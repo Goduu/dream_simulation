@@ -1,9 +1,12 @@
+"""
+Represents a penguin in the game.
+"""
 from typing import List, Optional, Tuple
 from classes.backpack_item import BackpackItem, Ice
-from classes.card import Card, CardPassiveTrigger
+from classes.card import Card
 from constants import Dir
 
-from printc import Emojis, MColors, printc, emojis
+from printc import Emojis, MColors, printc
 
 # Constants for penguin types
 BIG_PENGUIN = {"name": "BIG", "movement": 2, "fishing": 2, "ice": 4, "slots": 8}
@@ -51,7 +54,7 @@ class Penguin:
         Removes an item from the penguin's backpack.
         """
         printc(
-            f"{self.id} removing {item} from backpack {[item for item in self.backpack]}",
+            f"{self.id} removing {item} from backpack {list(self.backpack)}",
             MColors.OKGREEN,
         )
         if item in self.backpack:

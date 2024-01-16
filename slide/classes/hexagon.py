@@ -1,4 +1,6 @@
-from enum import Enum
+"""
+Represents a board hexagon. 
+"""
 from classes.backpack_item import FishType
 
 

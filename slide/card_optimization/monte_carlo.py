@@ -16,7 +16,7 @@ def your_function(arg):
 # For I/O-bound tasks
 
 
-num_simulations = 480  
+num_simulations = 480
 
 
 def play_game(cards: List[Card], metrics: List[CardMetrics], game_number):

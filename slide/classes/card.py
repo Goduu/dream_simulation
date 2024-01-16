@@ -1,3 +1,6 @@
+"""
+Represent a card on the game.
+"""
 from enum import Enum
 import json
 from typing import Dict, List, Tuple
@@ -7,6 +10,10 @@ from classes.backpack_item import Fish
 
 
 class CardPassiveTrigger(Enum):
+    """
+    What would trigger the passive effect of the card.
+    """
+
     BREAK_ICE = ("break_ice",)
     PLAY_CARD = ("play_card",)
     BUY_CARD = ("buy_card",)
@@ -17,6 +24,10 @@ class CardPassiveTrigger(Enum):
 
 
 class CardAgent(Enum):
+    """
+    Who will be affected by the card.
+    """
+
     YOURSELF = "yourself"
     OTHERS = "others"
     OTHER = "other"
@@ -27,6 +38,10 @@ class CardAgent(Enum):
 
 
 class CardOnPlayReward(Enum):
+    """
+    Types from on play rewards a card can give.
+    """
+
     FISH = ("fish",)
     ICE = ("ice",)
     MOVEMENT = ("movement",)
@@ -39,6 +54,10 @@ class CardOnPlayReward(Enum):
 
 
 class CardPassiveReward(Enum):
+    """
+    Types from passive rewards a card can give.
+    """
+
     FISH = ("fish",)
     ICE = ("ice",)
     MOVEMENT = ("movement",)
@@ -53,11 +72,6 @@ class CardPassiveReward(Enum):
 class Card:
     """
     Represents a card in the game.
-
-    Attributes:
-    name (str): The card's name.
-    cost (int): The cost to buy the card.
-    effect (function): The effect of the card when played.
     """
 
     def __init__(
@@ -111,19 +125,19 @@ class Card:
         """
         if isinstance(attr, Enum):
             return attr.value[0]
-        elif isinstance(attr, dict):
+        if isinstance(attr, dict):
             return {
                 key.value[0]: Card._serialize_complex_attribute(value)
                 for key, value in attr.items()
             }
-        elif isinstance(attr, list):
+        if isinstance(attr, list):
             return [Card._serialize_complex_attribute(item) for item in attr]
-        elif isinstance(attr, tuple):
+        if isinstance(attr, tuple):
             return tuple(Card._serialize_complex_attribute(item) for item in attr)
-        elif isinstance(attr, Fish):
+        if isinstance(attr, Fish):
             return attr.to_json()
-        else:
-            return attr
+
+        return attr
 
     @staticmethod
     def from_json(json_str):
@@ -132,10 +146,12 @@ class Card:
         Note: This method assumes the JSON string is in the correct format.
         """
         data = json.loads(json_str)
-        # Convert the complex attributes back to their original form, if necessary
-        # For example, re-constructing Enums or other complex types
-        # This part needs to be implemented based on your application's logic
         return Card(**data)
 
     def __repr__(self) -> str:
-        return f"Card: {self.short_name} Cost: {self.cost} Passive Effect: {self.passive_effect} On Play Effect: {self.on_play_effect} Points: {self.points} Quantity: {self.quantity}"
+        return f"Card: {self.short_name} \
+                Cost: {self.cost} \
+                Passive Effect: {self.passive_effect} \
+                On Play Effect: {self.on_play_effect} \
+                Points: {self.points} \
+                Quantity: {self.quantity}"

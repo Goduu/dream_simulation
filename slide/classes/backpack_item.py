@@ -1,8 +1,16 @@
+"""
+Represents the items that a penguin can carry in his backpack.
+"""
 from enum import Enum
+from typing import Union
 import json
 
 
 class FishType(Enum):
+    """
+    Represents the fish types on the game.
+    """
+
     A = "A"
     B = "B"
     C = "C"
@@ -49,32 +57,37 @@ class Ice:
 
     def __init__(self):
         self.type = "ice"
-        pass
 
     def __repr__(self) -> str:
-        return f"Ice"
+        return "Ice"
 
     def __eq__(self, other):
         return self.type == other.type
 
-    def to_json(self):
+    @staticmethod
+    def to_json():
         """
         Serializes the Fish object to a JSON-formatted string.
         """
         return json.dumps(
             {
-                "type": self.type,
+                "type": "Ice",
             }
         )
 
-    def from_json(json_str):
+    @staticmethod
+    def from_json():
         """
         Deserializes the JSON-formatted string to a Card object.
         Note: This method assumes the JSON string is in the correct format.
         """
-        data = json.loads(json_str)
         return Ice()
 
 
 class BackpackItem:
-    Ice or Fish
+    """
+    Union class of Ice and Fish
+    """
+
+    def __init__(self, item: Union[Ice, Fish]):
+        self.item = item

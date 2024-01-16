@@ -1,3 +1,7 @@
+"""
+Represents an action that a player can take during the game.
+"""
+
 from enum import Enum
 
 

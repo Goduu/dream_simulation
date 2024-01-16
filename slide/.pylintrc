@@ -1,5 +1,9 @@
 [FORMAT]
 ignore-long-lines=^\s*(# )f.*$|printc\(.*\)
+max-line-length = 120
 
 [BASIC]
 good-names=q,r,s,i,j,k,id
+
+[MASTER]
+init-hook='import sys; sys.path.append("/Users/icangussu/Documents/Dream/ReinforcmentLearning/SIMPLE/dream_simulation/slide/")'
