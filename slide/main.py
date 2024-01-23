@@ -5,7 +5,7 @@ from printc import MColors, printc
 from game import SlideGame
 from ui import visualize_board
 
-for i in range(100):
+for i in range(5):
     # print("starting game...", i)
     game = SlideGame(num_players=4)
     end_game = False

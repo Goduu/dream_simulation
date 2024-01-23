@@ -116,12 +116,12 @@ class SlideGame:
         max_seasons (int): The maximum number of seasons in the game.
     """
 
-    def __init__(self, num_players: int, cards: List[Card], metrics: List[CardMetrics]):
+    def __init__(self, num_players: int, cards: List[Card] = None, metrics: List[CardMetrics] = None):
         """
         Initializes a new instance of the FishyPenguinsGame class.
         """
-        all_cards = cards or get_all_cards()
-        self.metrics = metrics
+        all_cards = cards if cards is not None else get_all_cards()
+        self.metrics = metrics if metrics is not None else [CardMetrics(card.id) for card in all_cards]
         self.players: List[Player] = [
             Player(player_id) for player_id in range(num_players)
         ]
@@ -388,7 +388,7 @@ class SlideGame:
             hexagons_to_move (int): The number of hexagons to move the penguin.
         """
 
-        if penguin.movement_tokens >= hexagons_to_move:
+        if penguin.movement_tokens >= 1:
             direction = penguin.direction
 
             # Implement logic to update the penguin's position based on the
@@ -416,7 +416,8 @@ class SlideGame:
                     self.handle_collision(penguin, collision_penguin)
                 else:
                     move_penguin(penguin, new_position)
-
+            penguin.movement_tokens -= 1
+        
         else:
             printc(
                 f"{penguin.id} don't have enough movement tokens left.",

@@ -163,8 +163,6 @@ def move_penguin(penguin: Penguin, new_position: Tuple[int, int, int]):
             Emojis.MOVE,
         )
 
-    penguin.movement_tokens -= 1
-
 
 def push_penguin(penguin: Penguin, new_position: Tuple[int, int, int], direction: str):
     """

@@ -14,10 +14,11 @@ class CardPassiveTrigger(Enum):
     What would trigger the passive effect of the card.
     """
 
-    BREAK_ICE = ("break_ice",)
-    PLAY_CARD = ("play_card",)
-    BUY_CARD = ("buy_card",)
-    COLLIDE_PENGUIN = ("collide_penguin",)
+    BREAK_ICE = "break_ice"
+    DROP_ICE = "drop_ice"
+    PLAY_CARD = "play_card"
+    BUY_CARD = "buy_card"
+    COLLIDE_PENGUIN = "collide_penguin"
 
     def __repr__(self) -> str:
         return f"{self.value}"

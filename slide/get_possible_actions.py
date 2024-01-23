@@ -32,7 +32,7 @@ def add_actions_after_passing_season(
     """
     Add actions for the first movement of a penguin after passing season.
     """
-    if penguin.direction is not None or penguin.position is None:
+    if penguin.position is None:
         return
 
     for i in range(1, penguin.movement_tokens + 1):
@@ -91,43 +91,6 @@ def all_hexagons_available_to_move(
                 return False
 
     return all_hexagons_available
-
-
-def add_actions_normal_movement(
-    penguin: Penguin,
-    board: List[Hexagon],
-    players: List[Player],
-    possible_actions: List[List[Action]],
-):
-    """
-    For every movement token left, the penguin is given a possible action to move
-    in the direction it is facing and dropping ice if it has any.
-    """
-    if penguin.direction is None or penguin.position is None:
-        return
-
-    for move_counter in range(1, penguin.movement_tokens + 1):
-        if not all_hexagons_available_to_move(
-            penguin.position, penguin.direction, board, players, move_counter
-        ):
-            if penguin.movement_tokens > 0:
-                possible_actions.append([Action(ActionType.MOVE_OUT, None)])
-            break
-
-        if penguin.ice_tokens >= 1:
-            for ice_drop_counter in range(min(penguin.ice_tokens, move_counter)):
-                ice_drop_position = calculate_new_position(
-                    penguin.position, penguin.direction, ice_drop_counter
-                )
-                if hexagon_empty(board, players, ice_drop_position):
-                    possible_actions.append(
-                        [
-                            Action(ActionType.MOVE, move_counter),
-                            Action(ActionType.DROP_ICE, ice_drop_position),
-                        ]
-                    )
-        possible_actions.append([Action(ActionType.MOVE, move_counter)])
-
 
 def add_actions_first_movement(
     penguin: Penguin,
@@ -285,10 +248,7 @@ def get_possible_actions(
         # First penguin movement (without position or direction set)
         add_actions_first_movement(penguin, board, players, possible_actions)
 
-        # Normal movement (with position and direction set)
-        add_actions_normal_movement(penguin, board, players, possible_actions)
-
-        # Movement after passing season (with position but no direction set)
+        # Normal movement (with position set) 
         add_actions_after_passing_season(penguin, board, players, possible_actions)
 
     # Check if the penguin can break ice
